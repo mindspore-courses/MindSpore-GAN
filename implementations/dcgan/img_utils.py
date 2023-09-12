@@ -13,7 +13,7 @@ def make_grid(
         tensor,
         nrow: int = 8,
         padding: int = 2,
-        normalize: bool = False,
+        normalize: bool = True,
         value_range: Optional[Tuple[int, int]] = None,
         scale_each: bool = False,
         pad_value: float = 0.0):
