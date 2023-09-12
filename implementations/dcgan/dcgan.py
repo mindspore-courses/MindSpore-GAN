@@ -78,20 +78,20 @@ class Generator(nn.Cell):
                            beta_init=init.Constant(0.0)),
             nn.Upsample(scale_factor=2.0, recompute_scale_factor=True),
             nn.Conv2d(128, 128, 3, 1, 'pad', 1,
-                      weight_init=init.Normal(0.02, 1.0)),
+                      weight_init=init.Normal(0.02, 0.0)),
             nn.BatchNorm2d(128, 0.8,
                            gamma_init=init.Normal(0.02, 1.0),
                            beta_init=init.Constant(0.0)),
             nn.LeakyReLU(0.2),
             nn.Upsample(scale_factor=2.0, recompute_scale_factor=True),
             nn.Conv2d(128, 64, 3, 1, 'pad', 1,
-                      weight_init=init.Normal(0.02, 1.0)),
+                      weight_init=init.Normal(0.02, 0.0)),
             nn.BatchNorm2d(64, 0.8,
                            gamma_init=init.Normal(0.02, 1.0),
                            beta_init=init.Constant(0.0)),
             nn.LeakyReLU(0.2),
             nn.Conv2d(64, opt.channels, 3, 1, 'pad', 1,
-                      weight_init=init.Normal(0.02, 1.0)),
+                      weight_init=init.Normal(0.02, 0.0)),
             nn.Tanh()
         )
 
@@ -109,7 +109,7 @@ class Discriminator(nn.Cell):
         def discriminator_block(in_filters, out_filters, bn=True):
             block = [
                 nn.Conv2d(in_filters, out_filters, 3, 2, 'pad', 1,
-                          weight_init=init.Normal(0.02, 1.0)),
+                          weight_init=init.Normal(0.02, 0.0)),
                 nn.LeakyReLU(0.2),
                 nn.Dropout2d(0.25)
             ]

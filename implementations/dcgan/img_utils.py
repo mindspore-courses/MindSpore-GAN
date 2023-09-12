@@ -11,7 +11,7 @@ from PIL import Image
 
 def make_grid(
         tensor,
-        nrow: int = 8,
+        nrow: int = 5,
         padding: int = 2,
         normalize: bool = True,
         value_range: Optional[Tuple[int, int]] = None,
