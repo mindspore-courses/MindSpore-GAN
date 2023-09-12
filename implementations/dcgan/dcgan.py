@@ -15,7 +15,7 @@ from mindspore.dataset.vision import transforms
 from mindspore.common import dtype as mstype
 import mindspore.common.initializer as init
 
-from implementations.dcgan.img_utils import to_image
+from img_utils import to_image
 
 file_path = "../../data/MNIST/"
 
