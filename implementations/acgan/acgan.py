@@ -1,19 +1,16 @@
 """ACGAN Model"""
 
 import argparse
-import gzip
 import os
-import shutil
-import urllib.request
 
 import mindspore
+import mindspore.common.initializer as init
 import numpy as np
-from matplotlib import pyplot as plt
 from mindspore import Tensor, ops
 from mindspore import nn
 from mindspore.common import dtype as mstype
 from mindspore.dataset.vision import transforms
-import mindspore.common.initializer as init
+
 from img_utils import to_image
 
 file_path = "../../data/MNIST/"
@@ -96,7 +93,7 @@ class Discriminator(nn.Cell):
     """Discriminator Network"""
 
     def __init__(self):
-        super(Discriminator, self).__init__()
+        super().__init__(Discriminator)
 
         def discriminator_block(in_filters, out_filters, bn=True):
             """Returns layers of each discriminator block"""
@@ -181,6 +178,7 @@ def g_forward(_z, _gen_labels):
 
 
 def d_forward(_real_imgs, _gen_imgs, _labels, _gen_labels, _valid, _fake):
+    """Discriminator forward function"""
     # Loss for real images
     real_pred, _real_aux = discriminator(_real_imgs)
     d_real_loss = (adversarial_loss(real_pred, _valid) + auxiliary_loss(_real_aux, _labels)) / 2
