@@ -1,19 +1,17 @@
+"""DCGAN Model"""
+
 import argparse
 import gzip
-import math
 import os
 import shutil
-import urllib
-from urllib import request
+import urllib.request
 
-import numpy as np
 import mindspore
+import mindspore.common.initializer as init
 from mindspore import Tensor, ops
 from mindspore import nn
-from mindspore.common.initializer import HeUniform
-from mindspore.dataset.vision import transforms
 from mindspore.common import dtype as mstype
-import mindspore.common.initializer as init
+from mindspore.dataset.vision import transforms
 
 from img_utils import to_image
 
@@ -40,32 +38,35 @@ if not os.path.exists(file_path):
 os.makedirs("images", exist_ok=True)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
-parser.add_argument("--batch_size", type=int, default=64, help="size of the batches")
-parser.add_argument("--lr", type=float, default=0.0002, help="adam: learning rate")
-parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
-parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
-parser.add_argument("--n_cpu", type=int, default=8, help="number of cpu threads to use during batch generation")
-parser.add_argument("--latent_dim", type=int, default=100, help="dimensionality of the latent space")
-parser.add_argument("--img_size", type=int, default=32, help="size of each image dimension")
-parser.add_argument("--channels", type=int, default=1, help="number of image channels")
-parser.add_argument("--sample_interval", type=int, default=400, help="interval between image sampling")
+parser.add_argument("--n_epochs",
+                    type=int, default=200, help="number of epochs of training")
+parser.add_argument("--batch_size",
+                    type=int, default=64, help="size of the batches")
+parser.add_argument("--lr",
+                    type=float, default=0.0002, help="adam: learning rate")
+parser.add_argument("--b1",
+                    type=float, default=0.5, help="adam: decay of first order momentum of gradient")
+parser.add_argument("--b2",
+                    type=float, default=0.999, help="adam: decay of first order momentum of gradient")
+parser.add_argument("--n_cpu",
+                    type=int, default=8, help="number of cpu threads to use during batch generation")
+parser.add_argument("--latent_dim",
+                    type=int, default=100, help="dimensionality of the latent space")
+parser.add_argument("--img_size",
+                    type=int, default=32, help="size of each image dimension")
+parser.add_argument("--channels",
+                    type=int, default=1, help="number of image channels")
+parser.add_argument("--sample_interval",
+                    type=int, default=400, help="interval between image sampling")
 opt = parser.parse_args()
 print(opt)
 
 
-# def weight_init_normal(m):
-#     classname = m.__class__.__name__
-#     if classname.find("Conv") != -1:
-#         m.weight.data = init.initializer(init.Normal(0.02, 0.0), m.weight.data.shape)
-#     elif classname.find("BatchNorm") != -1:
-#         m.gamma = init.initializer(init.Normal(0.02, 1.0), m.gamma.shape)
-#         m.beta = init.initializer(init.Constant(0.0))
-
-
 class Generator(nn.Cell):
+    """Generator Network"""
+
     def __init__(self):
-        super(Generator, self).__init__()
+        super().__init__(Generator)
 
         self.init_size = opt.img_size // 4
         self.l1 = nn.SequentialCell(
@@ -95,16 +96,18 @@ class Generator(nn.Cell):
             nn.Tanh()
         )
 
-    def construct(self, z):
-        out = self.l1(z)
+    def construct(self, _z):
+        out = self.l1(_z)
         out = out.view(out.shape[0], 128, self.init_size, self.init_size)
         img = self.conv_blocks(out)
         return img
 
 
 class Discriminator(nn.Cell):
+    """Discriminator Network"""
+
     def __init__(self):
-        super(Discriminator, self).__init__()
+        super().__init__(Discriminator)
 
         def discriminator_block(in_filters, out_filters, bn=True):
             block = [
@@ -145,27 +148,25 @@ adversarial_loss = nn.BCELoss()
 generator = Generator()
 discriminator = Discriminator()
 
-# generator.apply(weight_init_normal)
-# discriminator.apply(weight_init_normal)
-
 G_Optim = nn.optim.Adam(generator.trainable_params(), learning_rate=opt.lr, beta1=opt.b1, beta2=opt.b2)
 D_Optim = nn.optim.Adam(discriminator.trainable_params(), learning_rate=opt.lr, beta1=opt.b1, beta2=opt.b2)
 
 
-# 生成器正向传播
-def g_forward(z, valid):
-    gen_imgs = generator(z)
-    g_loss = adversarial_loss(discriminator(gen_imgs), valid)
-    return g_loss, gen_imgs
+def g_forward(_z, _valid):
+    """Generator forward function"""
+    _gen_imgs = generator(_z)
+    _g_loss = adversarial_loss(discriminator(_gen_imgs), _valid)
+    return _g_loss, _gen_imgs
 
 
 # 判别器正向传播
-def d_forward(real_imgs, gen_imgs, valid, fake):
-    real_loss = adversarial_loss(discriminator(real_imgs), valid)
-    fake_loss = adversarial_loss(discriminator(gen_imgs), fake)
-    d_loss = (real_loss + fake_loss) / 2
+def d_forward(_real_imgs, _gen_imgs, _valid, _fake):
+    """Discriminator forward function"""
+    real_loss = adversarial_loss(discriminator(_real_imgs), _valid)
+    fake_loss = adversarial_loss(discriminator(_gen_imgs), _fake)
+    _d_loss = (real_loss + fake_loss) / 2
 
-    return d_loss
+    return _d_loss
 
 
 transform = [
@@ -203,8 +204,8 @@ for epoch in range(opt.n_epochs):
         D_Optim(d_grads)
 
         print(
-            "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f]"
-            % (epoch, opt.n_epochs, i, dataset.get_dataset_size(), d_loss.asnumpy().item(), g_loss.asnumpy().item())
+            f'[Epoch {epoch}/{opt.n_epochs}] [Batch {i}/{dataset.get_dataset_size()}] '
+            f'[D loss: {d_loss.asnumpy().item()}] [G loss: {g_loss.asnumpy().item()}]'
         )
 
         batches_done = epoch * dataset.get_dataset_size() + i

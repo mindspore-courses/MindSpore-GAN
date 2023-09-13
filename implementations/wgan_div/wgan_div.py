@@ -1,14 +1,15 @@
+"""WGAN DIV model"""
+
 import argparse
 import gzip
 import os
 import shutil
-import urllib
-from urllib import request
+import urllib.request
 
 import mindspore
 import numpy as np
 from matplotlib import pyplot as plt
-from mindspore import Tensor, ops, ms_function
+from mindspore import Tensor, ops
 from mindspore import nn
 from mindspore.common import dtype as mstype
 from mindspore.dataset.vision import transforms
@@ -36,18 +37,30 @@ if not os.path.exists(file_path):
 os.makedirs("images", exist_ok=True)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
-parser.add_argument("--batch_size", type=int, default=64, help="size of the batches")
-parser.add_argument("--lr", type=float, default=0.0002, help="adam: learning rate")
-parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
-parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
-parser.add_argument("--n_cpu", type=int, default=8, help="number of cpu threads to use during batch generation")
-parser.add_argument("--latent_dim", type=int, default=100, help="dimensionality of the latent space")
-parser.add_argument("--img_size", type=int, default=28, help="size of each image dimension")
-parser.add_argument("--channels", type=int, default=1, help="number of image channels")
-parser.add_argument("--n_critic", type=int, default=5, help="number of training steps for discriminator per iter")
-parser.add_argument("--clip_value", type=float, default=0.01, help="lower and upper clip value for disc. weights")
-parser.add_argument("--sample_interval", type=int, default=400, help="interval betwen image samples")
+parser.add_argument("--n_epochs",
+                    type=int, default=200, help="number of epochs of training")
+parser.add_argument("--batch_size",
+                    type=int, default=64, help="size of the batches")
+parser.add_argument("--lr",
+                    type=float, default=0.0002, help="adam: learning rate")
+parser.add_argument("--b1",
+                    type=float, default=0.5, help="adam: decay of first order momentum of gradient")
+parser.add_argument("--b2",
+                    type=float, default=0.999, help="adam: decay of first order momentum of gradient")
+parser.add_argument("--n_cpu",
+                    type=int, default=8, help="number of cpu threads to use during batch generation")
+parser.add_argument("--latent_dim",
+                    type=int, default=100, help="dimensionality of the latent space")
+parser.add_argument("--img_size",
+                    type=int, default=28, help="size of each image dimension")
+parser.add_argument("--channels",
+                    type=int, default=1, help="number of image channels")
+parser.add_argument("--n_critic",
+                    type=int, default=5, help="number of training steps for discriminator per iter")
+parser.add_argument("--clip_value",
+                    type=float, default=0.01, help="lower and upper clip value for disc. weights")
+parser.add_argument("--sample_interval",
+                    type=int, default=400, help="interval betwen image samples")
 opt = parser.parse_args()
 print(opt)
 
@@ -56,18 +69,20 @@ img_shape = (opt.channels, opt.img_size, opt.img_size)
 image_path = "./images"
 
 
-# Save the generated test image.
-def save_imgs(gen_imgs1, idx):
-    for i3 in range(gen_imgs1.shape[0]):
-        plt.subplot(5, 5, i3 + 1)
-        plt.imshow(gen_imgs1[i3, 0, :, :] / 2 + 0.5, cmap="gray")
+def save_imgs(_gen_imgs, idx):
+    """Save the generated test image."""
+    for j in range(_gen_imgs.shape[0]):
+        plt.subplot(5, 5, j + 1)
+        plt.imshow(_gen_imgs[j, 0, :, :] / 2 + 0.5, cmap="gray")
         plt.axis("off")
-    plt.savefig(image_path + "/test_{}.png".format(idx))
+    plt.savefig(f'image_path/test_{idx}.png"')
 
 
 class Generator(nn.Cell):
+    """Generator Network"""
+
     def __init__(self):
-        super(Generator, self).__init__()
+        super().__init__(Generator)
 
         def block(in_feat, out_feat, normalize=True):
             layers = [nn.Dense(in_feat, out_feat)]
@@ -85,15 +100,17 @@ class Generator(nn.Cell):
             nn.Tanh()
         )
 
-    def construct(self, z):
-        img = self.model(z)
+    def construct(self, _z):
+        img = self.model(_z)
         img = img.view(img.shape[0], *img_shape)
         return img
 
 
 class Discriminator(nn.Cell):
+    """Discriminator Network"""
+
     def __init__(self):
-        super(Discriminator, self).__init__()
+        super().__init__(Discriminator)
 
         self.model = nn.SequentialCell(
             nn.Dense(int(np.prod(img_shape)), 512),
@@ -108,6 +125,7 @@ class Discriminator(nn.Cell):
         validity = self.model(img_flat)
         return validity
 
+
 k = 2
 p = 6
 
@@ -118,15 +136,16 @@ discriminator.update_parameters_name('discriminator')
 generator.set_train()
 discriminator.set_train()
 
-
 G_Optim = nn.optim.Adam(generator.trainable_params(), learning_rate=opt.lr, beta1=opt.b1, beta2=opt.b2)
 D_Optim = nn.optim.Adam(discriminator.trainable_params(), learning_rate=opt.lr, beta1=opt.b1, beta2=opt.b2)
 
 G_Optim.update_parameters_name('G_Optim')
 D_Optim.update_parameters_name('D_Optim')
 
-def g_forward(z):
-    fake_imgs = generator(z)
+
+def g_forward(_z):
+    """Generator forward function"""
+    fake_imgs = generator(_z)
     # Loss measures generator's ability to fool the discriminator
     # Train on fake images
     fake_validity = discriminator(fake_imgs)
@@ -134,23 +153,23 @@ def g_forward(z):
     return g_loss, fake_imgs
 
 
-# 判别器正向传播
-def d_forward(real_imgs):
-    z = ops.randn((imgs.shape[0], opt.latent_dim))
-    fake_imgs = generator(z)
+def d_forward(_real_imgs):
+    """Discriminator forward function"""
+    _z = ops.randn((imgs.shape[0], opt.latent_dim))
+    fake_imgs = generator(_z)
     # Real images
-    real_validity = discriminator(real_imgs)
+    real_validity = discriminator(_real_imgs)
     # Fake images
     fake_validity = discriminator(fake_imgs)
 
     # Compute W-div gradient penalty
-    real_grad_out = ops.ones((real_imgs.shape[0], 1))
+    real_grad_out = ops.ones((_real_imgs.shape[0], 1))
     ops.stop_gradient(real_grad_out)
     real_grad_fn = ops.grad(discriminator)
-    real_gradients = real_grad_fn(real_imgs)
+    real_gradients = real_grad_fn(_real_imgs)
     real_grad_norm = real_gradients.view(real_gradients.shape[0], -1).pow(2).sum(1) ** (p / 2)
 
-    fake_grad_out = ops.ones((real_imgs.shape[0], 1))
+    fake_grad_out = ops.ones((_real_imgs.shape[0], 1))
     ops.stop_gradient(fake_grad_out)
     fake_grad_fn = ops.grad(discriminator)
     fake_gradients = fake_grad_fn(fake_imgs)
@@ -160,7 +179,7 @@ def d_forward(real_imgs):
     # Adversarial loss
     d_loss = -ops.mean(real_validity) + ops.mean(fake_validity) + div_gp
 
-    return d_loss, z
+    return d_loss, _z
 
 
 transform = [
@@ -178,7 +197,6 @@ dataset = mindspore.dataset.MnistDataset(
 
 grad_g = ops.value_and_grad(g_forward, None, G_Optim.parameters, has_aux=True)
 grad_d = ops.value_and_grad(d_forward, None, D_Optim.parameters, has_aux=True)
-
 
 batches_done = 0
 
@@ -200,8 +218,8 @@ for epoch in range(opt.n_epochs):
             G_Optim(G_grads)
 
             print(
-                "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f]"
-                % (epoch, opt.n_epochs, i, dataset.get_dataset_size(), loss_D.asnumpy().item(), loss_G.asnumpy().item())
+                f'[Epoch {epoch}/{opt.n_epochs}] [Batch {i}/{dataset.get_dataset_size()}] '
+                f'[D loss: {loss_D.asnumpy().item()}] [G loss: {loss_G.asnumpy().item()}]'
             )
 
             if batches_done % opt.sample_interval == 0:
