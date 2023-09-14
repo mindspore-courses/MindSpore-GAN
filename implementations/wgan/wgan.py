@@ -137,7 +137,7 @@ def d_forward(_real_imgs, _z):
 
 transform = [
     transforms.ToTensor(),
-    transforms.Normalize([0.5], [0.5])
+    transforms.Normalize([0.5], [0.5], is_hwc=False)
 ]
 
 dataset = mindspore.dataset.MnistDataset(
