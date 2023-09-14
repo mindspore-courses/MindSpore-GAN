@@ -1,9 +1,8 @@
 """The Models of SRGAN"""
 
-import mindspore.common.initializer as init
+from mindcv.models import vgg19
 from mindspore import nn
 from mindspore import ops
-from mindcv.models import vgg19
 
 
 class FeatureExtractor(nn.Cell):
@@ -67,7 +66,7 @@ class GeneratorResNet(nn.Cell):
 
         # Upsampling layers
         upsampling = []
-        for out_features in range(2):
+        for _ in range(2):
             upsampling += [
                 # nn.Upsample(scale_factor=2),
                 nn.Conv2d(64, 256,
@@ -122,7 +121,7 @@ class Discriminator(nn.Cell):
         layers = []
         in_filters = in_channels
         for i, out_filters in enumerate([64, 128, 256, 512]):
-            layers.extend(discriminator_block(in_filters, out_filters, first_block=(i == 0)))
+            layers.extend(discriminator_block(in_filters, out_filters, first_block=i == 0))
             in_filters = out_filters
 
         layers.append(nn.Conv2d(out_filters, 1, 3,
