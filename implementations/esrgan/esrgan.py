@@ -70,6 +70,15 @@ if opt.epoch != 0:
 optimizer_G = nn.optim.Adam(generator.trainable_params(), opt.lr, opt.b1, opt.b2)
 optimizer_D = nn.optim.Adam(discriminator.trainable_params(), opt.lr, opt.b1, opt.b2)
 
+mean = np.array([0.485, 0.456, 0.406])
+std = np.array([0.229, 0.224, 0.225])
+
+def denormalize(tensors):
+    """ Denormalizes image tensors using mean and std """
+    for c in range(3):
+        tensors[:, c].mul(std[c]).add(mean[c])
+    return ops.clamp(tensors, 0, 255)
+
 def preprocess(_imgs):
     """Dataset preprocess func"""
     _imgs = transforms.Resize((opt.hr_height, opt.hr_width), Inter.BICUBIC)(_imgs)
