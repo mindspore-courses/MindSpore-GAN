@@ -16,11 +16,10 @@ import sys
 import time
 
 import mindspore
-import numpy as np
+import mindspore.common.dtype as mstype
 from mindspore import nn, Tensor
 from mindspore import ops
 from mindspore.dataset import CelebADataset
-import mindspore.common.dtype as mstype
 from mindspore.dataset.vision import transforms, Inter
 
 from img_utils import to_image
@@ -103,11 +102,12 @@ val_transforms = [
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), is_hwc=False),
 ]
 
-train_dataset = CelebADataset(
+train_dataset = (CelebADataset(
     dataset_dir="../../data/CelebA",
     shuffle=True,
     decode=True,
-).map(operations=train_transforms, input_columns=["image"]).batch(opt.batch_size)
+).map(operations=train_transforms, input_columns=["image"])
+                 .batch(opt.batch_size))
 
 val_dataset = CelebADataset(
     dataset_dir="../../data/CelebA",
@@ -144,20 +144,20 @@ def sample_images(_batches_done):
     val_imgs, val_labels = next(val_dataset.create_tuple_iterator())
 
     img_samples = None
-    for i in range(10):
-        img, label = val_imgs[i], val_labels[i]
+    for j in range(10):
+        img, label = val_imgs[j], val_labels[j]
         # Repeat for number of label changes
-        imgs = img.repeat(c_dim, 1, 1, 1)
-        labels = label.repeat(c_dim, 1)
+        _imgs = img.repeat(c_dim, 1, 1, 1)
+        _labels = label.repeat(c_dim, 1)
         # Make changes to labels
         for sample_i, changes in enumerate(label_changes):
             for col, val in changes:
-                labels[sample_i, col] = 1 - labels[sample_i, col] if val == -1 else val
+                _labels[sample_i, col] = 1 - _labels[sample_i, col] if val == -1 else val
 
         # Generate translations
-        gen_imgs = generator(imgs, labels)
+        gen_imgs = generator(_imgs, _labels)
         # Concatenate images by width
-        gen_imgs = ops.cat([x for x in gen_imgs], -1)
+        gen_imgs = ops.cat(list(gen_imgs), -1)
         img_sample = ops.cat((img, gen_imgs), -1)
         # Add as row to generated samples
         img_samples = img_sample if img_samples is None else ops.cat((img_samples, img_sample), -2)

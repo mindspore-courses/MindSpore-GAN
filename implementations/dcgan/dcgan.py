@@ -159,7 +159,6 @@ def g_forward(_z, _valid):
     return _g_loss, _gen_imgs
 
 
-# 判别器正向传播
 def d_forward(_real_imgs, _gen_imgs, _valid, _fake):
     """Discriminator forward function"""
     real_loss = adversarial_loss(discriminator(_real_imgs), _valid)

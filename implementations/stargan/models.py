@@ -31,7 +31,7 @@ class ResidualBlock(nn.Cell):
 class GeneratorResNet(nn.Cell):
     def __init__(self, img_shape=(3, 128, 128), res_blocks=9, c_dim=5):
         super().__init__(GeneratorResNet)
-        channels, img_size, _ = img_shape
+        channels, _, _ = img_shape
 
         # Initial convolution block
         model = [
