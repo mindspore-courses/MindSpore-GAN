@@ -137,7 +137,7 @@ def g_forward(_z, _valid):
     # Generate a batch of images
     _gen_imgs = generator(_z)
     # Loss measures generator's ability to fool the discriminator
-    _g_loss = boundary_seeking_loss(discriminator(_gen_imgs), _valid)
+    _g_loss = boundary_seeking_loss(discriminator(_gen_imgs))
 
     return _g_loss, _gen_imgs
 
