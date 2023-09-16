@@ -9,9 +9,10 @@ import urllib.request
 import zipfile
 
 import mindspore
-from mindspore import nn
+from mindspore import nn, Tensor
 from mindspore import ops
 from mindspore.dataset import MindDataset
+import mindspore.common.dtype as mstype
 
 from img_utils import to_image, make_grid
 from utils import DynamicDecayLR, ReplayBuffer
@@ -139,31 +140,21 @@ def sample_images(batches):
 
 def g_forward(_real_A, _real_B, _valid):
     """Generator forward function"""
-    # Identity loss
-    loss_id_A = criterion_identity(G_BA(_real_A), _real_A)
-    loss_id_B = criterion_identity(G_AB(_real_B), _real_B)
-
-    loss_identity_ = (loss_id_A + loss_id_B) / 2
-
-    # GAN loss
-    _fake_B_ = G_AB(_real_A)
-    loss_GAN_AB = criterion_GAN(D_B(_fake_B_), _valid)
     _fake_A = G_BA(_real_B)
-    loss_GAN_BA = criterion_GAN(D_A(_fake_A), _valid)
+    _fake_B = G_AB(_real_A)
+    _rec_A = G_BA(_fake_B)
+    _rec_B = G_AB(_fake_A)
+    _identity_A = G_BA(_real_A)
+    _identity_B = G_AB(_real_B)
+    _loss_G_A = criterion_GAN(D_B(_fake_B), _valid)
+    _loss_G_B = criterion_GAN(D_A(_fake_A), _valid)
+    _loss_cycle_A = criterion_cycle(_rec_A, _real_A) * opt.lambda_cyc
+    _loss_cycle_B = criterion_cycle(_rec_B, _real_B) * opt.lambda_cyc
+    _loss_idt_A = criterion_identity(_identity_A, _real_A) * opt.lambda_cyc * opt.lambda_id
+    _loss_idt_B = criterion_identity(_identity_B, _real_B) * opt.lambda_cyc * opt.lambda_id
+    loss_G_ = _loss_G_A + _loss_G_B + _loss_cycle_A + _loss_cycle_B + _loss_idt_A + _loss_idt_B
 
-    loss_GAN_ = (loss_GAN_AB + loss_GAN_BA) / 2
-
-    # Cycle loss
-    recov_A = G_BA(_fake_B_)
-    loss_cycle_A = criterion_cycle(recov_A, _real_A)
-    recov_B = G_AB(_fake_A)
-    loss_cycle_B = criterion_cycle(recov_B, _real_B)
-
-    loss_cycle_ = (loss_cycle_A + loss_cycle_B) / 2
-
-    # Total loss
-    loss_G_ = loss_GAN_ + opt.lambda_cyc * loss_cycle_ + opt.lambda_id * loss_identity_
-    return loss_G_, loss_GAN_, loss_cycle_, loss_identity_, _fake_A, _fake_B_
+    return loss_G_, _loss_G_A, _loss_G_B, _loss_cycle_A, _loss_cycle_B, _loss_idt_A, _loss_idt_B, _fake_A, _fake_B
 
 
 def d_a_forward(_real_A, _fake_A, _valid, _fake):
@@ -192,10 +183,10 @@ def d_b_forward(_real_B, _fake_B, _valid, _fake):
     return loss_D_B_
 
 
-grad_g_ab = ops.value_and_grad(g_forward, None, optimizer_G_AB.parameters, has_aux=True)
-grad_g_ba = ops.value_and_grad(g_forward, None, optimizer_G_BA.parameters, has_aux=True)
-grad_d_a = ops.value_and_grad(d_a_forward, None, optimizer_D_A.parameters, has_aux=False)
-grad_d_b = ops.value_and_grad(d_b_forward, None, optimizer_D_B.parameters, has_aux=False)
+grad_g_ab = ops.value_and_grad(g_forward, None, optimizer_G_AB.parameters)
+grad_g_ba = ops.value_and_grad(g_forward, None, optimizer_G_BA.parameters)
+grad_d_a = ops.value_and_grad(d_a_forward, None, optimizer_D_A.parameters)
+grad_d_b = ops.value_and_grad(d_b_forward, None, optimizer_D_B.parameters)
 
 # ----------
 #  Training
@@ -222,8 +213,11 @@ for epoch in range(opt.n_epochs):
         #  Train Generators
         # ------------------
 
-        (_, _, _, _, _, fake_B), g_ab_grads = grad_g_ab(real_A, real_B, valid)
-        (loss_G, loss_GAN, loss_cycle, loss_identity, fake_A, _), g_ba_grads = grad_g_ba(real_A, real_B, valid)
+        loss_G, loss_G_A, loss_G_B, loss_cycle_A, loss_cycle_B, loss_idt_A, loss_idt_B, fake_A, fake_B = g_forward(
+            real_A, real_B, valid)
+
+        (_, _, _, _, _, _, _, _, _), g_ab_grads = grad_g_ab(real_A, real_B, valid)
+        (_, _, _, _, _, _, _, _, _), g_ba_grads = grad_g_ba(real_A, real_B, valid)
         optimizer_G_AB(g_ab_grads)
         optimizer_G_BA(g_ba_grads)
 
@@ -258,10 +252,10 @@ for epoch in range(opt.n_epochs):
             f'[Batch {i}/{dataset.get_dataset_size()}] '
             f'[D loss: {loss_D.asnumpy().item():.4f}] '
             f'[G loss: {loss_G.asnumpy().item():.4f}, '
-            f'adv: {loss_GAN.asnumpy().item():.4f}, '
-            f'cycle: {loss_cycle.asnumpy().item():.4f}, '
-            f'identity: {loss_identity.asnumpy().item():.4f}] '
-            f'ETA: {time_left}"'
+            f'adv: A: {loss_G_A.asnumpy().item():.4f} B: {loss_G_B.asnumpy().item():.4f}, '
+            f'cycle: A: {loss_cycle_A.asnumpy().item():.4f}, B: {loss_cycle_B.asnumpy().item():.4f}, '
+            f'identity: A: {loss_idt_A.asnumpy().item():.4f}, B: {loss_idt_B.asnumpy().item():4f}] '
+            f'ETA: {time_left}'
         )
 
         # If at sample interval save image
