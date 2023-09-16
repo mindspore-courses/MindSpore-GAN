@@ -181,7 +181,7 @@ def d_b_forward(_real_B, _fake_B, _valid, _fake):
     loss_real_ = criterion_GAN(D_B(_real_B), _valid)
     # Fake loss (on batch of previously generated samples)
     _fake_B_ = fake_B_buffer.push_and_pop(_fake_B)
-    loss_fake_ = criterion_GAN(D_A(ops.stop_gradient(_fake_B_)), _fake)
+    loss_fake_ = criterion_GAN(D_B(ops.stop_gradient(_fake_B_)), _fake)
     # Total loss
     loss_D_B_ = (loss_real_ + loss_fake_) / 2
 
