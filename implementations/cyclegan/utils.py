@@ -20,8 +20,8 @@ class DynamicDecayLR(LearningRateSchedule):
 
     def construct(self, global_step):
         epoch = self.cast(global_step, mstype.float32) // self.step_per_epoch
-        return 1.0 - max(Tensor(0.0), epoch + self.offset - self.decay_start_epoch) / (
-                    self.n_epochs - self.decay_start_epoch)
+        return self.lr * (1.0 - max(Tensor(0.0), epoch + self.offset - self.decay_start_epoch) / (
+                self.n_epochs - self.decay_start_epoch))
 
 
 class ReplayBuffer:
