@@ -91,14 +91,16 @@ if opt.epoch != 0:
 params_G = list(G_AB.trainable_params()) + list(G_BA.trainable_params())
 
 # Learning rate update schedulers
-decay_lr = DynamicDecayLR(opt.lr, opt.n_epochs, 1019, opt.epoch, opt.decay_epoch)
+decay_lr_G = DynamicDecayLR(opt.lr, opt.n_epochs, 1019, opt.epoch, opt.decay_epoch)
+decay_lr_D_A = DynamicDecayLR(opt.lr, opt.n_epochs, 1019, opt.epoch, opt.decay_epoch)
+decay_lr_D_B = DynamicDecayLR(opt.lr, opt.n_epochs, 1019, opt.epoch, opt.decay_epoch)
 
-optimizer_G = nn.optim.Adam(params_G, learning_rate=decay_lr,
+optimizer_G = nn.optim.Adam(params_G, learning_rate=decay_lr_G,
                             beta1=opt.b1, beta2=opt.b2)
-optimizer_D_A = nn.optim.Adam(D_A.trainable_params(), learning_rate=decay_lr,
+optimizer_D_A = nn.optim.Adam(D_A.trainable_params(), learning_rate=decay_lr_D_A,
                               beta1=opt.b1, beta2=opt.b2)
 
-optimizer_D_B = nn.optim.Adam(D_B.trainable_params(), learning_rate=decay_lr,
+optimizer_D_B = nn.optim.Adam(D_B.trainable_params(), learning_rate=decay_lr_D_B,
                               beta1=opt.b1, beta2=opt.b2)
 
 optimizer_G.update_parameters_name("optimizer_G")
@@ -235,6 +237,7 @@ for epoch in range(opt.n_epochs):
         optimizer_D_B(d_b_grads)
 
         loss_D = (loss_D_A + loss_D_B) / 2
+
 
         # --------------
         #  Log Progress
