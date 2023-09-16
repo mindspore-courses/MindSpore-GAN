@@ -88,22 +88,24 @@ if opt.epoch != 0:
     mindspore.load_checkpoint(f'saved_models/%{opt.dataset_name}/D_A_{opt.epoch}.pth', D_A)
     mindspore.load_checkpoint(f'saved_models/%{opt.dataset_name}/D_B_{opt.epoch}.pth', D_B)
 
-params_G = list(G_AB.trainable_params()) + list(G_BA.trainable_params())
-
 # Learning rate update schedulers
-decay_lr_G = DynamicDecayLR(opt.lr, opt.n_epochs, 1019, opt.epoch, opt.decay_epoch)
+decay_lr_G_AB = DynamicDecayLR(opt.lr, opt.n_epochs, 1019, opt.epoch, opt.decay_epoch)
+decay_lr_G_BA = DynamicDecayLR(opt.lr, opt.n_epochs, 1019, opt.epoch, opt.decay_epoch)
 decay_lr_D_A = DynamicDecayLR(opt.lr, opt.n_epochs, 1019, opt.epoch, opt.decay_epoch)
 decay_lr_D_B = DynamicDecayLR(opt.lr, opt.n_epochs, 1019, opt.epoch, opt.decay_epoch)
 
-optimizer_G = nn.optim.Adam(params_G, learning_rate=decay_lr_G,
-                            beta1=opt.b1, beta2=opt.b2)
+optimizer_G_AB = nn.optim.Adam(G_AB.trainable_params(), learning_rate=decay_lr_G_AB,
+                               beta1=opt.b1, beta2=opt.b2)
+optimizer_G_BA = nn.optim.Adam(G_BA.trainable_params(), learning_rate=decay_lr_G_BA,
+                               beta1=opt.b1, beta2=opt.b2)
 optimizer_D_A = nn.optim.Adam(D_A.trainable_params(), learning_rate=decay_lr_D_A,
                               beta1=opt.b1, beta2=opt.b2)
 
 optimizer_D_B = nn.optim.Adam(D_B.trainable_params(), learning_rate=decay_lr_D_B,
                               beta1=opt.b1, beta2=opt.b2)
 
-optimizer_G.update_parameters_name("optimizer_G")
+optimizer_G_AB.update_parameters_name("optimizer_G_AB")
+optimizer_G_BA.update_parameters_name("optimizer_G_BA")
 optimizer_D_A.update_parameters_name("optimizer_D_A")
 optimizer_D_B.update_parameters_name("optimizer_D_B")
 
@@ -190,7 +192,8 @@ def d_b_forward(_real_B, _fake_B, _valid, _fake):
     return loss_D_B_
 
 
-grad_g = ops.value_and_grad(g_forward, None, optimizer_G.parameters, has_aux=True)
+grad_g_ab = ops.value_and_grad(g_forward, None, optimizer_G_AB.parameters, has_aux=True)
+grad_g_ba = ops.value_and_grad(g_forward, None, optimizer_G_BA.parameters, has_aux=True)
 grad_d_a = ops.value_and_grad(d_a_forward, None, optimizer_D_A.parameters, has_aux=False)
 grad_d_b = ops.value_and_grad(d_b_forward, None, optimizer_D_B.parameters, has_aux=False)
 
@@ -219,8 +222,10 @@ for epoch in range(opt.n_epochs):
         #  Train Generators
         # ------------------
 
-        (loss_G, loss_GAN, loss_cycle, loss_identity, fake_A, fake_B), g_grads = grad_g(real_A, real_B, valid)
-        optimizer_G(g_grads)
+        (_, _, _, _, _, fake_B), g_ab_grads = grad_g_ab(real_A, real_B, valid)
+        (loss_G, loss_GAN, loss_cycle, loss_identity, fake_A, _), g_ba_grads = grad_g_ba(real_A, real_B, valid)
+        optimizer_G_AB(g_ab_grads)
+        optimizer_G_BA(g_ba_grads)
 
         # -----------------------
         #  Train Discriminator A
@@ -238,7 +243,6 @@ for epoch in range(opt.n_epochs):
 
         loss_D = (loss_D_A + loss_D_B) / 2
 
-
         # --------------
         #  Log Progress
         # --------------
@@ -255,7 +259,7 @@ for epoch in range(opt.n_epochs):
             f'[D loss: {loss_D.asnumpy().item():.4f}] '
             f'[G loss: {loss_G.asnumpy().item():.4f}, '
             f'adv: {loss_GAN.asnumpy().item():.4f}, '
-            f'cycle: {loss_cycle.asnumpy().item():.4f}], '
+            f'cycle: {loss_cycle.asnumpy().item():.4f}, '
             f'identity: {loss_identity.asnumpy().item():.4f}] '
             f'ETA: {time_left}"'
         )
