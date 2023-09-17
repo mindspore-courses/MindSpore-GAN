@@ -17,7 +17,7 @@ import time
 
 import mindspore
 import mindspore.common.dtype as mstype
-from mindspore import nn, Tensor
+from mindspore import nn
 from mindspore import ops
 from mindspore.dataset import CelebADataset
 from mindspore.dataset.vision import transforms, Inter

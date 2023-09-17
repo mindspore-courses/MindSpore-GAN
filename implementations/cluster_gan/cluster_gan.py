@@ -137,11 +137,11 @@ class GeneratorCNN(nn.Cell):
     """
 
     # Architecture : FC1024_BR-FC7x7x128_BR-(64)4dc2s_BR-(1)4dc2s_S
-    def __init__(self, latent_dim, _n_c, _x_shape, verbose=False):
+    def __init__(self, _latent_dim, _n_c, _x_shape, verbose=False):
         super().__init__(GeneratorCNN)
 
         self.name = 'generator'
-        self.latent_dim = latent_dim
+        self.latent_dim = _latent_dim
         self.n_c = _n_c
         self.x_shape = _x_shape
         self.ishape = (128, 7, 7)
