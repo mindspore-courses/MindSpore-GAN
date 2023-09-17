@@ -9,6 +9,7 @@ from mindspore import nn, ops
 ##############################
 
 class ResidualBlock(nn.Cell):
+    """Residual block"""
     def __init__(self, in_features):
         super().__init__(ResidualBlock)
 
@@ -29,7 +30,8 @@ class ResidualBlock(nn.Cell):
 
 
 class GeneratorResNet(nn.Cell):
-    def __init__(self, img_shape=(3, 128, 128), res_blocks=9, c_dim=5):
+    """Generator Network"""
+    def __init__(self, img_shape=(3, 128, 128), res_blocks=9, c_dim=40):
         super().__init__(GeneratorResNet)
         channels, _, _ = img_shape
 
@@ -87,6 +89,7 @@ class GeneratorResNet(nn.Cell):
 ##############################
 
 class Discriminator(nn.Cell):
+    """Discriminator Network"""
     def __init__(self, img_shape=(3, 128, 128), c_dim=40, n_strided=6):
         super().__init__(Discriminator)
         channels, img_size, _ = img_shape
@@ -104,7 +107,7 @@ class Discriminator(nn.Cell):
             layers.extend(discriminator_block(curr_dim, curr_dim * 2))
             curr_dim *= 2
 
-        self.model = nn.SequentialCell(*layers)
+        self.layers = nn.SequentialCell(*layers)
 
         # Output 1: PatchGAN
         self.out1 = nn.Conv2d(curr_dim, 1, 3, pad_mode='pad', padding=1, has_bias=False,
@@ -116,7 +119,7 @@ class Discriminator(nn.Cell):
                               pad_mode='valid')
 
     def construct(self, img):
-        feature_repr = self.model(img)
+        feature_repr = self.layers(img)
         out_adv = self.out1(feature_repr)
         out_cls = self.out2(feature_repr)
         return out_adv, out_cls.view(out_cls.shape[0], -1)

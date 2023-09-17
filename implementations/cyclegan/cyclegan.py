@@ -9,14 +9,13 @@ import urllib.request
 import zipfile
 
 import mindspore
-from mindspore import nn, Tensor
+from mindspore import nn
 from mindspore import ops
 from mindspore.dataset import MindDataset
-import mindspore.common.dtype as mstype
 
 from img_utils import to_image, make_grid
-from utils import DynamicDecayLR, ReplayBuffer
 from models import GeneratorResNet, Discriminator
+from utils import DynamicDecayLR, ReplayBuffer
 
 file_path = "../../data/"
 
@@ -32,10 +31,10 @@ if not os.path.exists(file_path + "apple2orange"):
     while not os.path.exists(os.path.join(file_path, 'apple2orange.zip')):
         pass
 
-    zip = zipfile.ZipFile(os.path.join(file_path, 'apple2orange.zip'), 'r')
+    zippedData = zipfile.ZipFile(os.path.join(file_path, 'apple2orange.zip'), 'r')
     print("Unzipping dataset...")
-    zip.extractall(path=file_path)
-    zip.close()
+    zippedData.extractall(path=file_path)
+    zippedData.close()
     os.rename(file_path + 'CycleGAN_apple2orange', file_path + 'apple2orange')
     os.remove(os.path.join(file_path, 'apple2orange.zip'))
 
@@ -124,17 +123,17 @@ def sample_images(batches):
     imgs = next(val_dataset.create_dict_iterator())
     G_AB.set_train(False)
     G_BA.set_train(False)
-    real_A = imgs["image_A"]
-    fake_B = G_AB(real_A)
-    real_B = imgs["image_B"]
-    fake_A = G_BA(real_B)
+    _real_A = imgs["image_A"]
+    _fake_B = G_AB(_real_A)
+    _real_B = imgs["image_B"]
+    _fake_A = G_BA(_real_B)
     # Arange images along x-axis
-    real_A = make_grid(real_A, nrow=5, normalize=True)
-    real_B = make_grid(real_B, nrow=5, normalize=True)
-    fake_A = make_grid(fake_A, nrow=5, normalize=True)
-    fake_B = make_grid(fake_B, nrow=5, normalize=True)
+    _real_A = make_grid(_real_A, nrow=5, normalize=True)
+    _real_B = make_grid(_real_B, nrow=5, normalize=True)
+    _fake_A = make_grid(_fake_A, nrow=5, normalize=True)
+    _fake_B = make_grid(_fake_B, nrow=5, normalize=True)
     # Arange images along y-axis
-    image_grid = ops.cat((real_A, fake_B, real_B, fake_A), 1)
+    image_grid = ops.cat((_real_A, _fake_B, _real_B, _fake_A), 1)
     to_image(image_grid, os.path.join(f'images/{opt.dataset_name}', F'{batches}.png'))
 
 

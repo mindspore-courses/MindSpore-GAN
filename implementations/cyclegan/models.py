@@ -9,6 +9,7 @@ import mindspore.common.initializer as init
 ##############################
 
 class ResidualBlock(nn.Cell):
+    """Residual Block"""
     def __init__(self, in_features):
         super().__init__(ResidualBlock)
 
@@ -31,6 +32,7 @@ class ResidualBlock(nn.Cell):
 
 
 class GeneratorResNet(nn.Cell):
+    """Generator Network"""
     def __init__(self, input_shape, num_residual_blocks):
         super().__init__(GeneratorResNet)
 
@@ -97,6 +99,7 @@ class GeneratorResNet(nn.Cell):
 
 
 class Discriminator(nn.Cell):
+    """Discriminator network"""
     def __init__(self, input_shape):
         super().__init__(Discriminator)
 

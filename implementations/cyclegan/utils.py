@@ -1,3 +1,6 @@
+"""Utilities"""
+
+
 import random
 
 from mindspore import ops, Tensor
@@ -33,6 +36,7 @@ class ReplayBuffer:
         self.data = []
 
     def push_and_pop(self, data):
+        """Push and pop function"""
         to_return = []
         for element in data:
             element = ops.unsqueeze(element, 0)
@@ -42,7 +46,7 @@ class ReplayBuffer:
             else:
                 if random.uniform(0, 1) > 0.5:
                     i = random.randint(0, self.max_size - 1)
-                    to_return.append(self[i].copy())
+                    to_return.append(self.data[i].copy())
                     self.data[i] = element
                 else:
                     to_return.append(element)
