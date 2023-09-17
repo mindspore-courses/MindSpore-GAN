@@ -65,14 +65,14 @@ criterion_cycle = nn.L1Loss()
 
 def criterion_cls(logit, target):
     """cls criterion"""
-    return (ops.binary_cross_entropy_with_logits(logit, target, weight=ops.ones(logit.shape), reduction='mean',
-                                                 pos_weight=ops.ones(logit.shape)) / logit.shape[0])
+    return (ops.binary_cross_entropy_with_logits(logit, target, weight=ops.ones_like(logit), reduction='mean',
+                                                 pos_weight=ops.ones_like(logit)) / logit.shape[0])
 
 
 # Loss weights
-lambda_cls = 1.0
-lambda_rec = 10.0
-lambda_gp = 10.0
+lambda_cls = 1
+lambda_rec = 10
+lambda_gp = 10
 
 # Initialize generator and discriminator
 generator = GeneratorResNet(img_shape=img_shape, res_blocks=opt.residual_blocks, c_dim=c_dim)
@@ -147,14 +147,18 @@ def sample_images(_batches_done):
     for j in range(10):
         img, label = val_imgs[j], val_labels[j]
         # Repeat for number of label changes
-        _imgs = img.repeat(c_dim, 1, 1, 1)
-        _labels = label.repeat(c_dim, 1)
+        _imgs = img.tile((c_dim, 1, 1, 1))
+        _labels = label.tile((c_dim, 1))
         # Make changes to labels
         for sample_i, changes in enumerate(label_changes):
             for col, val in changes:
-                _labels[sample_i, col] = 1 - _labels[sample_i, col] if val == -1 else val
+                if val == -1:
+                    _labels[sample_i, col] = 1 - _labels[sample_i, col].asnumpy().item()
+                else:
+                    _labels[sample_i, col] = val
 
         # Generate translations
+        _labels = ops.Cast()(_labels, mstype.float32)
         gen_imgs = generator(_imgs, _labels)
         # Concatenate images by width
         gen_imgs = ops.cat(list(gen_imgs), -1)
@@ -188,7 +192,7 @@ def d_forward(_imgs, _fake_imgs, _labels):
     """Discriminator forward function"""
     # Real images
     real_validity, pred_cls = discriminator(_imgs)
-    pred_cls = Tensor(pred_cls, dtype=mstype.float32)
+    pred_cls = ops.Cast()(pred_cls, mstype.float32)
     # Fake images
     fake_validity, _ = discriminator(_fake_imgs)
     # Gradient penalty
@@ -220,8 +224,8 @@ for epoch in range(opt.epoch, opt.n_epochs):
     for i, (imgs, labels) in enumerate(train_dataset.create_tuple_iterator()):
         # Sample labels as generator inputs
         sampled_c = ops.randint(0, 2, (imgs.shape[0], c_dim))
-        sampled_c = Tensor(sampled_c, dtype=mstype.float32)
-        labels = Tensor(labels, dtype=mstype.float32)
+        sampled_c = ops.Cast()(sampled_c, mstype.float32)
+        labels = ops.Cast()(labels, mstype.float32)
         # Generate fake batch of images
         fake_imgs = generator(imgs, sampled_c)
 
@@ -247,7 +251,7 @@ for epoch in range(opt.epoch, opt.n_epochs):
 
             # Determine approximate time left
             batches_done = epoch * train_dataset.get_dataset_size() + i
-            batches_left = opt.n_epochs * len(train_dataset.get_dataset_size()) - batches_done
+            batches_left = opt.n_epochs * train_dataset.get_dataset_size() - batches_done
             time_left = datetime.timedelta(seconds=batches_left * (time.time() - start_time) / (batches_done + 1))
 
             # Print log
