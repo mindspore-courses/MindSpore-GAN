@@ -1,4 +1,4 @@
-"""The Models of Pix2Pix"""
+"""The Models of CCGAN"""
 
 import mindspore.common.initializer as init
 from mindspore import nn

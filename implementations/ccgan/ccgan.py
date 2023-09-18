@@ -3,6 +3,7 @@
 import argparse
 import os
 
+import mindspore
 import numpy as np
 from mindspore import Tensor, ops
 from mindspore import nn
@@ -37,19 +38,6 @@ adversarial_loss = nn.MSELoss()
 # Initialize generator and discriminator
 generator = Generator(input_shape)
 discriminator = Discriminator(input_shape)
-
-transforms_ = [
-    transforms.Resize((opt.img_size, opt.img_size), Inter.BICUBIC),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    transforms.HWC2CHW()
-]
-transforms_lr = [
-    transforms.Resize((opt.img_size // 4, opt.img_size // 4), Inter.BICUBIC),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    transforms.HWC2CHW()
-]
-
-
 
 def preprocess(_imgs):
     """Dataset preprocess func"""
@@ -171,3 +159,6 @@ for epoch in range(opt.n_epochs):
         batches_done = epoch * dataset.get_dataset_size() + i
         if batches_done % opt.sample_interval == 0:
             save_sample(saved_samples)
+        if batches_done % 5000 == 0:
+            mindspore.save_checkpoint(generator,f'./g-{batches_done}.ckpt')
+            mindspore.save_checkpoint(discriminator, f'./d-{batches_done}.ckpt')

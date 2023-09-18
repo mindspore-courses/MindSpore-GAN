@@ -130,14 +130,16 @@ def g_forward(_z):
 def d_forward(_real_imgs, _z):
     """Discriminator forward function"""
     fake_imgs = ops.stop_gradient(generator(_z))
-    _loss_D = -ops.mean(discriminator(_real_imgs)) + ops.mean(discriminator(fake_imgs))
+    real = discriminator(_real_imgs)
+    fake = discriminator(fake_imgs)
+    _loss_D = -ops.mean(real) + ops.mean(fake)
 
     return _loss_D
 
 
 transform = [
     transforms.ToTensor(),
-    transforms.Normalize([0.5], [0.5])
+    transforms.Normalize([0.5], [0.5], is_hwc=False)
 ]
 
 dataset = mindspore.dataset.MnistDataset(
@@ -174,7 +176,7 @@ for epoch in range(opt.n_epochs):
 
             print(
                 f'[Epoch {epoch}/{opt.n_epochs}] [Batch {i}/{dataset.get_dataset_size()}] '
-                f'[D loss: {loss_D.asnumpy().item()}] [G loss: {loss_G.asnumpy().item()}]'
+                f'[D loss: {loss_D.asnumpy().item():.4f}] [G loss: {loss_G.asnumpy().item():.4f}]'
             )
 
         if batches_done % opt.sample_interval == 0:
