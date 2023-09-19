@@ -10,6 +10,8 @@ from __future__ import print_function
 
 import errno
 import os
+import gzip
+import pickle
 
 import mindspore
 from PIL import Image
@@ -18,8 +20,6 @@ import mindspore.common.dtype as mstype
 
 # import essential packages
 from six.moves import urllib
-import gzip
-import pickle
 
 
 class MNISTM:
@@ -133,10 +133,10 @@ class MNISTM:
             usage='test',
             shuffle=False)
 
-        for i, (_, label) in enumerate(mnist_train.create_tuple_iterator()):
+        for _, (_, label) in enumerate(mnist_train.create_tuple_iterator()):
             self.mnist_train_labels.append(label)
 
-        for i, (_, label) in enumerate(mnist_test.create_tuple_iterator()):
+        for _, (_, label) in enumerate(mnist_test.create_tuple_iterator()):
             self.mnist_test_labels.append(label)
 
         # save MNIST-M dataset
