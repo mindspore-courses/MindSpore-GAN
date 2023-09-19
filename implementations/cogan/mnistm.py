@@ -78,29 +78,18 @@ class MNISTM:
             return len(self.train_ds[0])
         return len(self.test_ds[0])
 
-    def _check_exists(self):
-        return os.path.exists(os.path.join(self.root, self.processed_folder, self.training_file)) and os.path.exists(
-            os.path.join(self.root, self.processed_folder, self.test_file)
-        )
-
     def get_train_labels(self, labels):
         """Get MNIST labels"""
         for _, label in enumerate(labels.create_tuple_iterator()):
             self.mnist_train_labels.append(label)
-        return
 
     def get_test_labels(self, labels):
         """Get MNIST labels"""
         for _, label in enumerate(labels.create_tuple_iterator()):
             self.mnist_test_labels.append(label)
-        return
 
     def dl_preprocess(self):
-        """Download the MNIST data."""
-
-        # check if dataset already exists
-        if self._check_exists():
-            return
+        """Create MNIST-M dataset."""
 
         # make data dirs
         try:
