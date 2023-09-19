@@ -159,6 +159,7 @@ class Discriminator(nn.Cell):
 
 
 class Classifier(nn.Cell):
+    """Classifier Network"""
     def __init__(self):
         super().__init__(Classifier)
 

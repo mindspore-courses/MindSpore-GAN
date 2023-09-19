@@ -16,6 +16,11 @@ from PIL import Image
 from mindspore import Tensor
 import mindspore.common.dtype as mstype
 
+# import essential packages
+from six.moves import urllib
+import gzip
+import pickle
+
 
 class MNISTM:
     """`MNIST-M Dataset."""
@@ -30,9 +35,9 @@ class MNISTM:
     mnist_train_labels = []
     mnist_test_labels = []
 
-    def __init__(self, root, mnist_root="data", train=True, transform=None, target_transform=None, download=False):
+    def __init__(self, root, mnist_root="data", train=True, transform=None, target_transform=None):
         """Init MNIST-M dataset."""
-        super(MNISTM, self).__init__()
+        super().__init__(MNISTM)
         self.root = os.path.expanduser(root)
         self.mnist_root = os.path.expanduser(mnist_root)
         self.transform = transform
@@ -71,8 +76,7 @@ class MNISTM:
         """Return size of dataset."""
         if self.train:
             return len(self.train_ds[0])
-        else:
-            return len(self.test_ds[0])
+        return len(self.test_ds[0])
 
     def _check_exists(self):
         return os.path.exists(os.path.join(self.root, self.processed_folder, self.training_file)) and os.path.exists(
@@ -80,19 +84,19 @@ class MNISTM:
         )
 
     def get_train_labels(self, labels):
-        for i, label in enumerate(labels.create_tuple_iterator()):
+        """Get MNIST labels"""
+        for _, label in enumerate(labels.create_tuple_iterator()):
             self.mnist_train_labels.append(label)
+        return
 
     def get_test_labels(self, labels):
-        for i, label in enumerate(labels.create_tuple_iterator()):
+        """Get MNIST labels"""
+        for _, label in enumerate(labels.create_tuple_iterator()):
             self.mnist_test_labels.append(label)
+        return
 
     def dl_preprocess(self):
         """Download the MNIST data."""
-        # import essential packages
-        from six.moves import urllib
-        import gzip
-        import pickle
 
         # check if dataset already exists
         if self._check_exists():

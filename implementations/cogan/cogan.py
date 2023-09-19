@@ -10,7 +10,6 @@ import mindspore
 import mindspore.common.initializer as init
 from mindspore import nn
 from mindspore import ops
-from mindspore.common import dtype as mstype
 from mindspore.dataset.transforms import Compose
 from mindspore.dataset.vision import transforms
 
@@ -60,7 +59,7 @@ class CoupledGenerators(nn.Cell):
     """COGAN Generators"""
 
     def __init__(self):
-        super(CoupledGenerators, self).__init__()
+        super().__init__(CoupledGenerators)
 
         self.init_size = opt.img_size // 4
         self.fc = nn.SequentialCell(nn.Dense(opt.latent_dim, 128 * self.init_size ** 2))
@@ -199,10 +198,10 @@ optimizer_G = nn.optim.Adam(coupled_generators.trainable_params(), learning_rate
 optimizer_D = nn.optim.Adam(coupled_discriminators.trainable_params(), learning_rate=opt.lr, beta1=opt.b1, beta2=opt.b2)
 
 
-def g_forward(batch_size, _valid):
+def g_forward(_batch_size, _valid):
     """Generator forward function"""
     # Sample noise as generator input
-    z = ops.randn((batch_size, opt.latent_dim))
+    z = ops.randn((_batch_size, opt.latent_dim))
 
     # Generate a batch of images
     _gen_imgs1, _gen_imgs2 = coupled_generators(z)
