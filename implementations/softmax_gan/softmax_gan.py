@@ -63,7 +63,7 @@ class Generator(nn.Cell):
         def block(in_feat, out_feat, normalize=True):
             layers = [nn.Dense(in_feat, out_feat)]
             if normalize:
-                layers.append(nn.BatchNorm1d(out_feat, 0.8,affine=False))
+                layers.append(nn.BatchNorm1d(out_feat, 0.8, affine=False))
             layers.append(nn.LeakyReLU(0.2))
             return layers
 
@@ -142,7 +142,7 @@ def g_forward(_real_imgs, _g_target):
     _d_fake = discriminator(_gen_imgs)
 
     # Partition function
-    Z = ops.sum(ops.exp(-_d_real)) + ops.sum(ops.exp(-_d_fake))
+    Z = ops.sum(ops.exp(ops.neg(_d_real))) + ops.sum(ops.exp(ops.neg(_d_fake)))
 
     # Calculate loss of generator and update
     _g_loss = _g_target * (ops.sum(_d_real) + ops.sum(_d_fake)) + log(Z)
@@ -157,7 +157,7 @@ def d_forward(_real_imgs, _gen_imgs, _d_target):
     _d_fake = discriminator(_gen_imgs)
 
     # Partition function
-    Z = ops.sum(ops.exp(-_d_real)) + ops.sum(ops.exp(-_d_fake))
+    Z = ops.sum(ops.exp(ops.neg(_d_real))) + ops.sum(ops.exp(ops.neg(_d_fake)))
 
     # Calculate loss of discriminator and update
     _d_loss = _d_target * ops.sum(_d_real) + log(Z)
@@ -186,7 +186,6 @@ for epoch in range(opt.n_epochs):
 
         # Configure input
         real_imgs = imgs
-
 
         # -----------------
         #  Train Generator

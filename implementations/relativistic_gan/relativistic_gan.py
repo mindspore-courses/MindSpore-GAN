@@ -1,13 +1,9 @@
 """RelativisticGAN Model"""
 
 import argparse
-import gzip
 import os
-import shutil
-import urllib.request
 
 import mindspore
-import numpy as np
 from mindspore import nn
 from mindspore import ops
 from mindspore.common import dtype as mstype
@@ -156,8 +152,8 @@ def d_forward(_real_imgs, _gen_imgs, _valid, _fake):
     fake_pred = discriminator(_gen_imgs)
 
     if opt.rel_avg_gan:
-        real_loss = adversarial_loss(real_pred - fake_pred.mean(0, keepdim=True), _valid)
-        fake_loss = adversarial_loss(fake_pred - real_pred.mean(0, keepdim=True), _fake)
+        real_loss = adversarial_loss(real_pred - fake_pred.mean(0, keep_dims=True), _valid)
+        fake_loss = adversarial_loss(fake_pred - real_pred.mean(0, keep_dims=True), _fake)
     else:
         real_loss = adversarial_loss(real_pred - fake_pred, _valid)
         fake_loss = adversarial_loss(fake_pred - real_pred, _fake)
