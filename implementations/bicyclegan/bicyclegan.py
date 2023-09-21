@@ -36,8 +36,8 @@ parser.add_argument("--lambda_kl", type=float, default=0.01, help="kullback-leib
 opt = parser.parse_args()
 print(opt)
 
-os.makedirs("images/%s" % opt.dataset_name, exist_ok=True)
-os.makedirs("saved_models/%s" % opt.dataset_name, exist_ok=True)
+os.makedirs(f'images/{opt.dataset_name}', exist_ok=True)
+os.makedirs(f'saved_models/{opt.dataset_name}', exist_ok=True)
 
 input_shape = (opt.channels, opt.img_height, opt.img_width)
 
@@ -99,13 +99,13 @@ def sample_image(batches):
     generator.set_train(False)
     imgs = next(val_dataset.create_tuple_iterator())
     img_samples = None
-    for img_A, img_B in zip(imgs[0], imgs[1]):
+    for img_A, _ in zip(imgs[0], imgs[1]):
         # Repeat input image by number of desired columns
-        real_A = img_A.view(1, *img_A.shape).tile((opt.latent_dim, 1, 1, 1))
+        _real_A = img_A.view(1, *img_A.shape).tile((opt.latent_dim, 1, 1, 1))
         # Sample latent representations
         sampled_z = ops.randn(opt.latent_dim, opt.latent_dim, dtype=mstype.float32)
         # Generate samples
-        fake_B = generator(real_A, sampled_z)
+        fake_B = generator(_real_A, sampled_z)
         # Concatenate samples horisontally
         fake_B = ops.cat(list(fake_B), -1)
         img_sample = ops.cat((img_A, fake_B), -1)
@@ -117,6 +117,7 @@ def sample_image(batches):
 
 
 def reparameterization(_mu, _logvar):
+    """Reparameterization function"""
     std = ops.exp(_logvar / 2)
     sampled_z = ops.randn(_mu.shape[0], opt.latent_dim, dtype=mstype.float32)
     _z = sampled_z * std + _mu

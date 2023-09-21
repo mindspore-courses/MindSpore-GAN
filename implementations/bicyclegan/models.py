@@ -130,6 +130,7 @@ class Encoder(nn.Cell):
 
 
 class MultiDiscriminator(nn.Cell):
+    """Multi-Discriminator"""
     def __init__(self, input_shape):
         super().__init__(MultiDiscriminator)
 
@@ -147,7 +148,7 @@ class MultiDiscriminator(nn.Cell):
         channels, _, _ = input_shape
         # Extracts discriminator models
         self.models = nn.CellList()
-        for i in range(3):
+        for _ in range(3):
             self.models.append(
                 nn.SequentialCell(
                     *discriminator_block(channels, 64, normalize=False),

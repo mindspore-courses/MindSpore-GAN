@@ -1,8 +1,9 @@
-import glob
-import random
-import os
-import numpy as np
+"""Dataset Preprocess"""
 
+import glob
+import os
+
+import numpy as np
 from PIL import Image
 from mindspore.dataset.transforms import Compose
 from mindspore.dataset.vision import transforms, Inter

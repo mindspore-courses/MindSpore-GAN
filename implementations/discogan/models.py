@@ -1,6 +1,7 @@
-from mindcv import resnet18
-from mindspore import nn, ops
+"""DiscoGAN Networks"""
+
 import mindspore.common.initializer as init
+from mindspore import nn, ops
 
 
 ##############################
