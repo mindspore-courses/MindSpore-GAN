@@ -63,7 +63,7 @@ print(opt)
 
 
 class Generator(nn.Cell):
-    """Generator Network"""
+    """GeneratorUNet Network"""
 
     def __init__(self):
         super().__init__(Generator)
@@ -153,7 +153,7 @@ D_Optim = nn.optim.Adam(discriminator.trainable_params(), learning_rate=opt.lr, 
 
 
 def g_forward(_z, _valid):
-    """Generator forward function"""
+    """GeneratorUNet forward function"""
     _gen_imgs = generator(_z)
     _g_loss = adversarial_loss(discriminator(_gen_imgs), _valid)
     return _g_loss, _gen_imgs

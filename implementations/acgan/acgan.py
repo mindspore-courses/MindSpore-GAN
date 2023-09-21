@@ -45,7 +45,7 @@ print(opt)
 
 
 class Generator(nn.Cell):
-    """Generator Network"""
+    """GeneratorUNet Network"""
 
     def __init__(self):
         super().__init__(Generator)
@@ -169,7 +169,7 @@ def sample_image(n_row, batches):
 
 
 def g_forward(_z, _gen_labels):
-    """Generator forward function"""
+    """GeneratorUNet forward function"""
     _gen_imgs = generator(_z, _gen_labels)
     # Loss measures generator's ability to fool the discriminator
     validity, pred_label = discriminator(_gen_imgs)
@@ -221,7 +221,7 @@ for epoch in range(opt.n_epochs):
         gen_labels = ops.randint(0, opt.n_classes, (batch_size,), dtype=mstype.int32)
 
         # ---------------------
-        #  Train Generator
+        #  Train GeneratorUNet
         # ---------------------
 
         (g_loss, gen_imgs), g_grads = grad_g(z, gen_labels)

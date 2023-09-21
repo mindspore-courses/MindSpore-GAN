@@ -89,7 +89,7 @@ class ResidualBlock(nn.Cell):
 
 
 class Generator(nn.Cell):
-    """Generator Network"""
+    """GeneratorUNet Network"""
 
     def __init__(self):
         super().__init__(Generator)
@@ -246,7 +246,7 @@ optimizer_D = nn.optim.Adam(discriminator.trainable_params(), learning_rate=opt.
 
 
 def g_forward(_imgs_A, _labels_A, _valid):
-    """Generator forward function"""
+    """GeneratorUNet forward function"""
     # Sample noise as generator input
     z = ops.randn((batch_size, opt.latent_dim))
 

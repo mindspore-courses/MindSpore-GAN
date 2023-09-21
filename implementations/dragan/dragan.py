@@ -54,7 +54,7 @@ print(opt)
 
 
 class Generator(nn.Cell):
-    """Generator Network"""
+    """GeneratorUNet Network"""
 
     def __init__(self):
         super().__init__(Generator)
@@ -182,7 +182,7 @@ def compute_gradient_penalty(D, X):
 
 
 def g_forward(_imgs, _valid):
-    """Generator forward function"""
+    """GeneratorUNet forward function"""
     # Sample noise as generator input
     z = ops.randn((_imgs.shape[0], opt.latent_dim), dtype=mstype.float32)
 
@@ -222,7 +222,7 @@ for epoch in range(opt.n_epochs):
         real_imgs = imgs
 
         # -----------------
-        #  Train Generator
+        #  Train GeneratorUNet
         # -----------------
 
         (g_loss, gen_imgs), g_grads = grad_g(real_imgs, valid)

@@ -84,7 +84,7 @@ def save_sample(_saved_samples):
 
 
 def g_forward(_masked_imgs, _imgs_lr, _valid):
-    """Generator forward function"""
+    """GeneratorUNet forward function"""
     # Generate a batch of images
     _gen_imgs = generator(_masked_imgs, _imgs_lr)
 
@@ -128,7 +128,7 @@ for epoch in range(opt.n_epochs):
         masked_imgs = Tensor(masked_imgs)
 
         # -----------------
-        #  Train Generator
+        #  Train GeneratorUNet
         # -----------------
 
         (g_loss, gen_imgs), g_grads = grad_g(masked_imgs, imgs_lr, valid)

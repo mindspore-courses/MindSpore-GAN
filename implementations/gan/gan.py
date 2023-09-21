@@ -66,7 +66,7 @@ img_shape = (opt.channels, opt.img_size, opt.img_size)
 
 
 class Generator(nn.Cell):
-    """Generator Network"""
+    """GeneratorUNet Network"""
 
     def __init__(self):
         super().__init__(Generator)
@@ -120,7 +120,7 @@ G_Optim = nn.optim.Adam(generator.trainable_params(), learning_rate=opt.lr, beta
 
 
 def g_forward(_z):
-    """Generator forward function"""
+    """GeneratorUNet forward function"""
     img = generator(_z)
     img = img.view(img.shape[0], *img_shape)
     img_flat = img.view(img.shape[0], -1)

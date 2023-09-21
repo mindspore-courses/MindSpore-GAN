@@ -213,7 +213,7 @@ for epoch in range(opt.n_epochs):
         real_imgs = Tensor(imgs)
 
         # -----------------
-        #  Train Generator
+        #  Train GeneratorUNet
         # -----------------
 
         (g_loss, encoded_imgs), g_grads = grad_g(real_imgs)

@@ -83,10 +83,10 @@ D_B.update_parameters_name("G_BA")
 
 if opt.epoch != 0:
     # Load pretrained models
-    mindspore.load_checkpoint(f'saved_models/%{opt.dataset_name}/G_AB_{opt.epoch}.pth', G_AB)
-    mindspore.load_checkpoint(f'saved_models/%{opt.dataset_name}/G_BA_{opt.epoch}.pth', G_BA)
-    mindspore.load_checkpoint(f'saved_models/%{opt.dataset_name}/D_A_{opt.epoch}.pth', D_A)
-    mindspore.load_checkpoint(f'saved_models/%{opt.dataset_name}/D_B_{opt.epoch}.pth', D_B)
+    mindspore.load_checkpoint(f'saved_models/%{opt.dataset_name}/G_AB_{opt.epoch}.ckpt', G_AB)
+    mindspore.load_checkpoint(f'saved_models/%{opt.dataset_name}/G_BA_{opt.epoch}.ckpt', G_BA)
+    mindspore.load_checkpoint(f'saved_models/%{opt.dataset_name}/D_A_{opt.epoch}.ckpt', D_A)
+    mindspore.load_checkpoint(f'saved_models/%{opt.dataset_name}/D_B_{opt.epoch}.ckpt', D_B)
 
 # Learning rate update schedulers
 decay_lr_G_AB = DynamicDecayLR(opt.lr, opt.n_epochs, 1019, opt.epoch, opt.decay_epoch)
@@ -138,7 +138,7 @@ def sample_images(batches):
 
 
 def g_forward(_real_A, _real_B, _valid):
-    """Generator forward function"""
+    """GeneratorUNet forward function"""
     _fake_A = G_BA(_real_B)
     _fake_B = G_AB(_real_A)
     _rec_A = G_BA(_fake_B)

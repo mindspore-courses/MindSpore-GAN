@@ -257,7 +257,7 @@ class DiscriminatorCNN(nn.Cell):
     CNN to model the discriminator of a ClusterGAN
     Input is tuple (X,z) of an image vector and its corresponding
     representation z vector. For example, if X comes from the dataset, corresponding
-    z is Encoder(X), and if z is sampled from representation space, X is Generator(z)
+    z is Encoder(X), and if z is sampled from representation space, X is GeneratorUNet(z)
     Output is a 1-dimensional value
     """
 
@@ -380,7 +380,7 @@ test_imgs, test_labels = next(testdata.create_tuple_iterator())
 
 
 def ge_forward(_real_imgs):
-    """Generator forward function"""
+    """GeneratorUNet forward function"""
     # Sample random latent variables
     zn, zc, zc_idx = sample_z(shape=_real_imgs.shape[0], _latent_dim=latent_dim, _n_c=n_c)
     # Generate a batch of images
@@ -457,10 +457,10 @@ for epoch in range(n_epochs):
         real_imgs = imgs
 
         # ---------------------------
-        #  Train Generator + Encoder
+        #  Train GeneratorUNet + Encoder
         # ---------------------------
 
-        # Step for Generator & Encoder, n_skip_iter times less than for discriminator
+        # Step for GeneratorUNet & Encoder, n_skip_iter times less than for discriminator
 
         (ge_loss, gen_imgs, valid), ge_grads = grad_ge(real_imgs)
         if i % n_skip_iter == 0:

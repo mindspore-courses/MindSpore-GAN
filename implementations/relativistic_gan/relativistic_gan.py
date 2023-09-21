@@ -32,7 +32,7 @@ print(opt)
 
 
 class Generator(nn.Cell):
-    """Generator Network"""
+    """GeneratorUNet Network"""
 
     def __init__(self):
         super().__init__(Generator)
@@ -125,7 +125,7 @@ optimizer_D = nn.optim.Adam(discriminator.trainable_params(), learning_rate=opt.
 
 
 def g_forward(_real_imgs, _valid):
-    """Generator forward function"""
+    """GeneratorUNet forward function"""
     # Generate a batch of images
     z = ops.randn((_real_imgs.shape[0], opt.latent_dim), dtype=mstype.float32)
     _gen_imgs = generator(z)
@@ -184,7 +184,7 @@ for epoch in range(opt.n_epochs):
         real_imgs = imgs
 
         # -----------------
-        #  Train Generator
+        #  Train GeneratorUNet
         # -----------------
 
         (g_loss, gen_imgs), g_grads = grad_g(real_imgs, valid)

@@ -99,7 +99,7 @@ dataset = CelebADataset(
 
 
 def g_forward(_imgs_hr, _imgs_lr, _valid):
-    """Generator forward function"""
+    """GeneratorUNet forward function"""
     # Generate a high resolution image from low resolution input
     _gen_hr = generator(_imgs_lr)
     # Measure pixel-wise loss against ground truth
@@ -124,7 +124,7 @@ def g_forward(_imgs_hr, _imgs_lr, _valid):
 
 
 def g_forward_warmup(_imgs_hr, _imgs_lr):
-    """Generator warmup forward func"""
+    """GeneratorUNet warmup forward func"""
     # Generate a high resolution image from low resolution input
     _gen_hr = generator(_imgs_lr)
     # Measure pixel-wise loss against ground truth

@@ -5,7 +5,7 @@ from mindspore import nn
 
 
 class Generator(nn.Cell):
-    """Generator Network"""
+    """GeneratorUNet Network"""
 
     def __init__(self, channels=3):
         super().__init__(Generator)

@@ -55,7 +55,7 @@ img_shape = (opt.channels, opt.img_size, opt.img_size)
 
 
 class Generator(nn.Cell):
-    """Generator Network"""
+    """GeneratorUNet Network"""
 
     def __init__(self):
         super().__init__(Generator)
@@ -133,7 +133,7 @@ def log(x):
 
 
 def g_forward(_real_imgs, _g_target):
-    """Generator forward function"""
+    """GeneratorUNet forward function"""
     # Generate a batch of images
     z = ops.randn((_real_imgs.shape[0], opt.latent_dim), dtype=mstype.float32)
     _gen_imgs = generator(z)
@@ -188,7 +188,7 @@ for epoch in range(opt.n_epochs):
         real_imgs = imgs
 
         # -----------------
-        #  Train Generator
+        #  Train GeneratorUNet
         # -----------------
 
         (g_loss, gen_imgs), g_grads = grad_g(real_imgs, g_target)

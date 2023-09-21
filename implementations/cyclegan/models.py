@@ -32,7 +32,7 @@ class ResidualBlock(nn.Cell):
 
 
 class GeneratorResNet(nn.Cell):
-    """Generator Network"""
+    """GeneratorUNet Network"""
     def __init__(self, input_shape, num_residual_blocks):
         super().__init__(GeneratorResNet)
 

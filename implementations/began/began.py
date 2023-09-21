@@ -54,7 +54,7 @@ img_shape = (opt.channels, opt.img_size, opt.img_size)
 
 
 class Generator(nn.Cell):
-    """Generator network"""
+    """GeneratorUNet network"""
 
     def __init__(self):
         super().__init__(Generator)
@@ -153,7 +153,7 @@ dataset = mindspore.dataset.MnistDataset(
 
 
 def g_forward(_z):
-    """Generator forward function"""
+    """GeneratorUNet forward function"""
     # Generate a batch of images
     _gen_imgs = generator(_z)
     # Loss measures generator's ability to fool the discriminator
@@ -196,7 +196,7 @@ for epoch in range(opt.n_epochs):
         real_imgs = Tensor(imgs)
 
         # -----------------
-        #  Train Generator
+        #  Train GeneratorUNet
         # -----------------
 
         z = ops.randn((imgs.shape[0], opt.latent_dim))
