@@ -1,13 +1,11 @@
 """Dataset Preprocess"""
 
 import glob
-import random
 import os
-import numpy as np
 
+import numpy as np
 from PIL import Image
 from mindspore.dataset.transforms import Compose
-from mindspore.dataset.vision import transforms, Inter
 
 
 class Edges2ShoesDataset():
