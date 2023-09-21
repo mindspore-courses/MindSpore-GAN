@@ -174,8 +174,9 @@ def compute_gradient_penalty(D, X):
     interpolates = ops.Cast()(interpolates, mstype.float32)
 
     # Get gradient w.r.t. interpolates
-    grad_fn = ops.grad(D)
-    gradients = grad_fn(interpolates)[0]
+    grad_fn = ops.grad(D, return_ids=True)
+    gradients = grad_fn(interpolates)
+    gradients = ops.get_grad(gradients, 0)
 
     _gradient_penalty = lambda_gp * ((gradients.norm(2, dim=1) - 1) ** 2).mean()
     return _gradient_penalty
