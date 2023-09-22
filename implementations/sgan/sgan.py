@@ -1,4 +1,4 @@
-"""DRAGAN Model"""
+"""SGAN Model"""
 
 import argparse
 import gzip
@@ -9,8 +9,8 @@ import urllib.request
 import mindspore
 import mindspore.common.initializer as init
 import numpy as np
-from mindspore import Tensor, ops
-from mindspore import nn
+from mindspore import nn, Tensor
+from mindspore import ops
 from mindspore.common import dtype as mstype
 from mindspore.dataset.vision import transforms
 
@@ -46,9 +46,10 @@ parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first 
 parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
 parser.add_argument("--n_cpu", type=int, default=8, help="number of cpu threads to use during batch generation")
 parser.add_argument("--latent_dim", type=int, default=100, help="dimensionality of the latent space")
+parser.add_argument("--num_classes", type=int, default=10, help="number of classes for dataset")
 parser.add_argument("--img_size", type=int, default=32, help="size of each image dimension")
 parser.add_argument("--channels", type=int, default=1, help="number of image channels")
-parser.add_argument("--sample_interval", type=int, default=1000, help="interval between image sampling")
+parser.add_argument("--sample_interval", type=int, default=400, help="interval between image sampling")
 opt = parser.parse_args()
 print(opt)
 
@@ -59,7 +60,9 @@ class Generator(nn.Cell):
     def __init__(self):
         super().__init__(Generator)
 
-        self.init_size = opt.img_size // 4
+        self.label_emb = nn.Embedding(opt.num_classes, opt.latent_dim)
+
+        self.init_size = opt.img_size // 4  # Initial size before upsampling
         self.l1 = nn.SequentialCell(
             nn.Dense(opt.latent_dim, 128 * self.init_size ** 2)
         )
@@ -69,25 +72,25 @@ class Generator(nn.Cell):
                            gamma_init=init.Normal(0.02, 1.0),
                            beta_init=init.Constant(0.0), affine=False),
             nn.Upsample(scale_factor=2.0, recompute_scale_factor=True),
-            nn.Conv2d(128, 128, 3, stride=1,
-                      pad_mode='pad', padding=1, has_bias=False,
+            nn.Conv2d(128, 128, 3,
+                      stride=1, pad_mode='pad', padding=1,
                       weight_init=init.Normal(0.02, 0.0)),
             nn.BatchNorm2d(128, 0.8,
                            gamma_init=init.Normal(0.02, 1.0),
                            beta_init=init.Constant(0.0), affine=False),
             nn.LeakyReLU(0.2),
             nn.Upsample(scale_factor=2.0, recompute_scale_factor=True),
-            nn.Conv2d(128, 64, 3, stride=1,
-                      pad_mode='pad', padding=1, has_bias=False,
+            nn.Conv2d(128, 64, 3,
+                      stride=1, pad_mode='pad', padding=1,
                       weight_init=init.Normal(0.02, 0.0)),
             nn.BatchNorm2d(64, 0.8,
                            gamma_init=init.Normal(0.02, 1.0),
                            beta_init=init.Constant(0.0), affine=False),
             nn.LeakyReLU(0.2),
-            nn.Conv2d(64, opt.channels, 3, stride=1,
-                      pad_mode='pad', padding=1, has_bias=False,
+            nn.Conv2d(64, opt.channels, 3,
+                      stride=1, pad_mode='pad', padding=1,
                       weight_init=init.Normal(0.02, 0.0)),
-            nn.Tanh(),
+            nn.Tanh()
         )
 
     def construct(self, noise):
@@ -104,19 +107,21 @@ class Discriminator(nn.Cell):
         super().__init__(Discriminator)
 
         def discriminator_block(in_filters, out_filters, bn=True):
+            """Returns layers of each discriminator block"""
             block = [
-                nn.Conv2d(in_filters, out_filters, 3, 2,
-                          pad_mode='pad', padding=1, has_bias=False,
+                nn.Conv2d(in_filters, out_filters, 3,
+                          stride=2, pad_mode='pad', padding=1,
                           weight_init=init.Normal(0.02, 0.0)),
                 nn.LeakyReLU(0.2),
-                nn.Dropout2d(0.25)]
+                nn.Dropout2d(0.25)
+            ]
             if bn:
                 block.append(nn.BatchNorm2d(out_filters, 0.8,
                                             gamma_init=init.Normal(0.02, 1.0),
                                             beta_init=init.Constant(0.0), affine=False))
             return block
 
-        self.model = nn.SequentialCell(
+        self.conv_blocks = nn.SequentialCell(
             *discriminator_block(opt.channels, 16, bn=False),
             *discriminator_block(16, 32),
             *discriminator_block(32, 64),
@@ -125,24 +130,29 @@ class Discriminator(nn.Cell):
 
         # The height and width of downsampled image
         ds_size = opt.img_size // 2 ** 4
+
+        # Output layers
         self.adv_layer = nn.SequentialCell(
             nn.Dense(128 * ds_size ** 2, 1),
             nn.Sigmoid()
         )
+        self.aux_layer = nn.SequentialCell(
+            nn.Dense(128 * ds_size ** 2, opt.num_classes + 1),
+            nn.Softmax()
+        )
 
     def construct(self, img):
-        out = self.model(img)
+        out = self.conv_blocks(img)
         out = out.view(out.shape[0], -1)
         validity = self.adv_layer(out)
+        label = self.aux_layer(out)
 
-        return validity
+        return validity, label
 
 
-# Loss function
+# Loss functions
 adversarial_loss = nn.BCELoss()
-
-# Loss weight for gradient penalty
-lambda_gp = 10
+auxiliary_loss = nn.CrossEntropyLoss()
 
 # Initialize generator and discriminator
 generator = Generator()
@@ -151,7 +161,7 @@ discriminator = Discriminator()
 transform = [
     transforms.Resize(opt.img_size),
     transforms.ToTensor(),
-    transforms.Normalize([0.5], [0.5])
+    transforms.Normalize([0.5], [0.5], is_hwc=False)
 ]
 
 dataset = mindspore.dataset.MnistDataset(
@@ -165,48 +175,40 @@ optimizer_G = nn.optim.Adam(generator.trainable_params(), learning_rate=opt.lr, 
 optimizer_D = nn.optim.Adam(discriminator.trainable_params(), learning_rate=opt.lr, beta1=opt.b1, beta2=opt.b2)
 
 
-def compute_gradient_penalty(D, X):
-    """Calculates the gradient penalty loss for DRAGAN"""
-    # Random weight term for interpolation
-    alpha = Tensor(np.random.random(size=X.shape))
-
-    interpolates = alpha * X + ((1 - alpha) * (X + 0.5 * X.std() * ops.rand(X.shape)))
-    interpolates = ops.Cast()(interpolates, mstype.float32)
-
-    # Get gradient w.r.t. interpolates
-
-    grad_fn = ops.grad(D, return_ids=True)
-    gradients = grad_fn(interpolates)
-    gradients = ops.get_grad(gradients, 0)
-
-    _gradient_penalty = lambda_gp * ((gradients.norm(2, dim=1) - 1) ** 2).mean()
-    return _gradient_penalty
-
-
-def g_forward(_imgs, _valid):
+def g_forward(_batch_size, _valid):
     """Generator forward function"""
-    # Sample noise as generator input
-    z = ops.randn((_imgs.shape[0], opt.latent_dim), dtype=mstype.float32)
+    # Sample noise and labels as generator input
+    z = ops.randn((_batch_size, opt.latent_dim), dtype=mstype.float32)
 
     # Generate a batch of images
     _gen_imgs = generator(z)
 
     # Loss measures generator's ability to fool the discriminator
-    _g_loss = adversarial_loss(discriminator(_gen_imgs), _valid)
+    validity, _ = discriminator(_gen_imgs)
+    _g_loss = adversarial_loss(validity, _valid)
+
     return _g_loss, _gen_imgs
 
 
-def d_forward(_real_imgs, _gen_imgs, _valid, _fake):
+def d_forward(_real_imgs, _gen_imgs, _labels, _fake_aux_gt, _valid, _fake):
     """Discriminator forward function"""
-    # Measure discriminator's ability to classify real from generated samples
-    real_loss = adversarial_loss(discriminator(_real_imgs), _valid)
-    fake_loss = adversarial_loss(discriminator(_gen_imgs), _fake)
-    _d_loss = (real_loss + fake_loss) / 2
+    # Loss for real images
+    real_pred, real_aux = discriminator(_real_imgs)
+    d_real_loss = (adversarial_loss(real_pred, _valid) + auxiliary_loss(real_aux, _labels)) / 2
 
-    # Calculate gradient penalty
-    _gradient_penalty = compute_gradient_penalty(discriminator, _real_imgs)
+    # Loss for fake images
+    fake_pred, fake_aux = discriminator(_gen_imgs)
+    d_fake_loss = (adversarial_loss(fake_pred, _fake) + auxiliary_loss(fake_aux, _fake_aux_gt)) / 2
 
-    return _gradient_penalty, _d_loss
+    # Total discriminator loss
+    _d_loss = (d_real_loss + d_fake_loss) / 2
+
+    # Calculate discriminator accuracy
+    pred = np.concatenate([real_aux.asnumpy(), fake_aux.asnumpy()], axis=0)
+    gt = np.concatenate([_labels.asnumpy(), _fake_aux_gt.asnumpy()], axis=0)
+    _d_acc = np.mean(np.argmax(pred, axis=1) == gt)
+
+    return _d_loss, _d_acc
 
 
 grad_g = ops.value_and_grad(g_forward, None, optimizer_G.parameters, has_aux=True)
@@ -215,31 +217,49 @@ grad_d = ops.value_and_grad(d_forward, None, optimizer_D.parameters, has_aux=Tru
 generator.set_train()
 discriminator.set_train()
 
+# ----------
+#  Training
+# ----------
+
 for epoch in range(opt.n_epochs):
-    for i, (imgs, _) in enumerate(dataset.create_tuple_iterator()):
-        valid = ops.stop_gradient(ops.ones((imgs.shape[0], 1)))
-        fake = ops.stop_gradient(ops.zeros((imgs.shape[0], 1)))
+    for i, (imgs, labels) in enumerate(dataset.create_tuple_iterator()):
+
+        batch_size = imgs.shape[0]
+
+        # Adversarial ground truths
+        valid = ops.stop_gradient(ops.ones((batch_size, 1)))
+        fake = ops.stop_gradient(ops.zeros((batch_size, 1)))
+        fake_aux_gt = ops.stop_gradient(ops.fill(mstype.int32, Tensor(batch_size), opt.num_classes))
 
         # Configure input
         real_imgs = imgs
+        labels = Tensor(labels, dtype=mstype.int32)
 
         # -----------------
         #  Train Generator
         # -----------------
 
-        (g_loss, gen_imgs), g_grads = grad_g(real_imgs, valid)
+        (g_loss, gen_imgs), g_grads = grad_g(batch_size, valid)
         optimizer_G(g_grads)
 
         # ---------------------
         #  Train Discriminator
         # ---------------------
-
-        (gradient_penalty, d_loss), d_grads = grad_d(real_imgs, ops.stop_gradient(gen_imgs), valid, fake)
+        (d_loss, d_acc), d_grads = grad_d(real_imgs, ops.stop_gradient(gen_imgs),
+                                          labels, fake_aux_gt, valid, fake)
         optimizer_D(d_grads)
 
-        print(
-            f'[Epoch {epoch}/{opt.n_epochs}] [Batch {i}/{dataset.get_dataset_size()}] '
-            f'[D loss: {d_loss.asnumpy().item():.4f}] [G loss: {g_loss.asnumpy().item():.4f}]'
-        )
+        # --------------
+        # Log Progress
+        # --------------
 
-    to_image(gen_imgs, os.path.join("images", F'{epoch}.png'))
+        print(
+            f'[Epoch {epoch}/{opt.n_epochs}] '
+            f'[Batch {i}/{dataset.get_dataset_size()}] '
+            f'[D loss: {d_loss.asnumpy().item():.4f}, '
+            f'acc: {100 * d_acc}%] '
+            f'[G loss: {g_loss.asnumpy().item():.4f}]'
+        )
+        batches_done = epoch * dataset.get_dataset_size() + i
+        if batches_done % opt.sample_interval == 0:
+            to_image(gen_imgs[:25], os.path.join("images", F'{batches_done}.png'))

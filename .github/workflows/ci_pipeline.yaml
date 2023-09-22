@@ -29,4 +29,4 @@ jobs:
         pip install -r requirements.txt
     - name: Analysing the code with pylint
       run: |
-        pylint implementations --rcfile=.github/pylint.conf --disable=E0401 --disable=C0103
+        pylint implementations --rcfile=.github/pylint.conf --disable=E0401 --disable=C0103 --disable=R1728

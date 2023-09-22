@@ -1,4 +1,4 @@
-"""DRAGAN Model"""
+"""LSGAN Model"""
 
 import argparse
 import gzip
@@ -8,9 +8,8 @@ import urllib.request
 
 import mindspore
 import mindspore.common.initializer as init
-import numpy as np
-from mindspore import Tensor, ops
 from mindspore import nn
+from mindspore import ops
 from mindspore.common import dtype as mstype
 from mindspore.dataset.vision import transforms
 
@@ -48,7 +47,7 @@ parser.add_argument("--n_cpu", type=int, default=8, help="number of cpu threads 
 parser.add_argument("--latent_dim", type=int, default=100, help="dimensionality of the latent space")
 parser.add_argument("--img_size", type=int, default=32, help="size of each image dimension")
 parser.add_argument("--channels", type=int, default=1, help="number of image channels")
-parser.add_argument("--sample_interval", type=int, default=1000, help="interval between image sampling")
+parser.add_argument("--sample_interval", type=int, default=1000, help="number of image channels")
 opt = parser.parse_args()
 print(opt)
 
@@ -65,33 +64,30 @@ class Generator(nn.Cell):
         )
 
         self.conv_blocks = nn.SequentialCell(
-            nn.BatchNorm2d(128,
-                           gamma_init=init.Normal(0.02, 1.0),
-                           beta_init=init.Constant(0.0), affine=False),
             nn.Upsample(scale_factor=2.0, recompute_scale_factor=True),
-            nn.Conv2d(128, 128, 3, stride=1,
-                      pad_mode='pad', padding=1, has_bias=False,
+            nn.Conv2d(128, 128, 3, stride=1, padding=1,
+                      pad_mode='pad',
                       weight_init=init.Normal(0.02, 0.0)),
             nn.BatchNorm2d(128, 0.8,
                            gamma_init=init.Normal(0.02, 1.0),
-                           beta_init=init.Constant(0.0), affine=False),
+                           beta_init=init.Constant(0.0)),
             nn.LeakyReLU(0.2),
             nn.Upsample(scale_factor=2.0, recompute_scale_factor=True),
-            nn.Conv2d(128, 64, 3, stride=1,
-                      pad_mode='pad', padding=1, has_bias=False,
+            nn.Conv2d(128, 64, 3, stride=1, padding=1,
+                      pad_mode='pad',
                       weight_init=init.Normal(0.02, 0.0)),
             nn.BatchNorm2d(64, 0.8,
                            gamma_init=init.Normal(0.02, 1.0),
-                           beta_init=init.Constant(0.0), affine=False),
+                           beta_init=init.Constant(0.0)),
             nn.LeakyReLU(0.2),
-            nn.Conv2d(64, opt.channels, 3, stride=1,
-                      pad_mode='pad', padding=1, has_bias=False,
+            nn.Conv2d(64, opt.channels, 3, stride=1, padding=1,
+                      pad_mode='pad',
                       weight_init=init.Normal(0.02, 0.0)),
-            nn.Tanh(),
+            nn.Tanh()
         )
 
-    def construct(self, noise):
-        out = self.l1(noise)
+    def construct(self, z):
+        out = self.l1(z)
         out = out.view(out.shape[0], 128, self.init_size, self.init_size)
         img = self.conv_blocks(out)
         return img
@@ -105,15 +101,16 @@ class Discriminator(nn.Cell):
 
         def discriminator_block(in_filters, out_filters, bn=True):
             block = [
-                nn.Conv2d(in_filters, out_filters, 3, 2,
-                          pad_mode='pad', padding=1, has_bias=False,
+                nn.Conv2d(in_filters, out_filters, 3, 2, padding=1,
+                          pad_mode='pad',
                           weight_init=init.Normal(0.02, 0.0)),
                 nn.LeakyReLU(0.2),
-                nn.Dropout2d(0.25)]
+                nn.Dropout2d(0.25)
+            ]
             if bn:
                 block.append(nn.BatchNorm2d(out_filters, 0.8,
                                             gamma_init=init.Normal(0.02, 1.0),
-                                            beta_init=init.Constant(0.0), affine=False))
+                                            beta_init=init.Constant(0.0)))
             return block
 
         self.model = nn.SequentialCell(
@@ -125,10 +122,7 @@ class Discriminator(nn.Cell):
 
         # The height and width of downsampled image
         ds_size = opt.img_size // 2 ** 4
-        self.adv_layer = nn.SequentialCell(
-            nn.Dense(128 * ds_size ** 2, 1),
-            nn.Sigmoid()
-        )
+        self.adv_layer = nn.Dense(128 * ds_size ** 2, 1)
 
     def construct(self, img):
         out = self.model(img)
@@ -138,11 +132,8 @@ class Discriminator(nn.Cell):
         return validity
 
 
-# Loss function
-adversarial_loss = nn.BCELoss()
-
-# Loss weight for gradient penalty
-lambda_gp = 10
+# !!! Minimizes MSE instead of BCE
+adversarial_loss = nn.MSELoss()
 
 # Initialize generator and discriminator
 generator = Generator()
@@ -151,7 +142,7 @@ discriminator = Discriminator()
 transform = [
     transforms.Resize(opt.img_size),
     transforms.ToTensor(),
-    transforms.Normalize([0.5], [0.5])
+    transforms.Normalize([0.5], [0.5], is_hwc=False)
 ]
 
 dataset = mindspore.dataset.MnistDataset(
@@ -165,24 +156,6 @@ optimizer_G = nn.optim.Adam(generator.trainable_params(), learning_rate=opt.lr, 
 optimizer_D = nn.optim.Adam(discriminator.trainable_params(), learning_rate=opt.lr, beta1=opt.b1, beta2=opt.b2)
 
 
-def compute_gradient_penalty(D, X):
-    """Calculates the gradient penalty loss for DRAGAN"""
-    # Random weight term for interpolation
-    alpha = Tensor(np.random.random(size=X.shape))
-
-    interpolates = alpha * X + ((1 - alpha) * (X + 0.5 * X.std() * ops.rand(X.shape)))
-    interpolates = ops.Cast()(interpolates, mstype.float32)
-
-    # Get gradient w.r.t. interpolates
-
-    grad_fn = ops.grad(D, return_ids=True)
-    gradients = grad_fn(interpolates)
-    gradients = ops.get_grad(gradients, 0)
-
-    _gradient_penalty = lambda_gp * ((gradients.norm(2, dim=1) - 1) ** 2).mean()
-    return _gradient_penalty
-
-
 def g_forward(_imgs, _valid):
     """Generator forward function"""
     # Sample noise as generator input
@@ -193,6 +166,7 @@ def g_forward(_imgs, _valid):
 
     # Loss measures generator's ability to fool the discriminator
     _g_loss = adversarial_loss(discriminator(_gen_imgs), _valid)
+
     return _g_loss, _gen_imgs
 
 
@@ -201,22 +175,25 @@ def d_forward(_real_imgs, _gen_imgs, _valid, _fake):
     # Measure discriminator's ability to classify real from generated samples
     real_loss = adversarial_loss(discriminator(_real_imgs), _valid)
     fake_loss = adversarial_loss(discriminator(_gen_imgs), _fake)
-    _d_loss = (real_loss + fake_loss) / 2
+    _d_loss = 0.5 * (real_loss + fake_loss)
 
-    # Calculate gradient penalty
-    _gradient_penalty = compute_gradient_penalty(discriminator, _real_imgs)
-
-    return _gradient_penalty, _d_loss
+    return _d_loss
 
 
 grad_g = ops.value_and_grad(g_forward, None, optimizer_G.parameters, has_aux=True)
-grad_d = ops.value_and_grad(d_forward, None, optimizer_D.parameters, has_aux=True)
+grad_d = ops.value_and_grad(d_forward, None, optimizer_D.parameters, has_aux=False)
 
 generator.set_train()
 discriminator.set_train()
 
+# ----------
+#  Training
+# ----------
+
 for epoch in range(opt.n_epochs):
     for i, (imgs, _) in enumerate(dataset.create_tuple_iterator()):
+
+        # Adversarial ground truths
         valid = ops.stop_gradient(ops.ones((imgs.shape[0], 1)))
         fake = ops.stop_gradient(ops.zeros((imgs.shape[0], 1)))
 
@@ -233,13 +210,17 @@ for epoch in range(opt.n_epochs):
         # ---------------------
         #  Train Discriminator
         # ---------------------
-
-        (gradient_penalty, d_loss), d_grads = grad_d(real_imgs, ops.stop_gradient(gen_imgs), valid, fake)
+        (d_loss), d_grads = grad_d(real_imgs, gen_imgs, valid, fake)
         optimizer_D(d_grads)
+
+        # --------------
+        # Log Progress
+        # --------------
 
         print(
             f'[Epoch {epoch}/{opt.n_epochs}] [Batch {i}/{dataset.get_dataset_size()}] '
             f'[D loss: {d_loss.asnumpy().item():.4f}] [G loss: {g_loss.asnumpy().item():.4f}]'
         )
-
-    to_image(gen_imgs, os.path.join("images", F'{epoch}.png'))
+        batches_done = epoch * dataset.get_dataset_size() + i
+        if batches_done % opt.sample_interval == 0:
+            to_image(gen_imgs[:25], os.path.join("images", F'{batches_done}.png'))
