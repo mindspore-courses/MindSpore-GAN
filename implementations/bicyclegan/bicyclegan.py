@@ -149,7 +149,7 @@ def ge_forward(_real_A, _real_B, _valid):
     loss_LR_GAN = D_LR.compute_loss(_fake_B, _valid)
 
     # ----------------------------------
-    # Total Loss (GeneratorUNet + Encoder)
+    # Total Loss (Generator + Encoder)
     # ----------------------------------
 
     _loss_GE = loss_VAE_GAN + loss_LR_GAN + opt.lambda_pixel * _loss_pixel + opt.lambda_kl * _loss_kl
@@ -157,7 +157,7 @@ def ge_forward(_real_A, _real_B, _valid):
 
 
 def g_forward(_real_A):
-    """GeneratorUNet warmup forward func"""
+    """Generator warmup forward func"""
     # Produce output using sampled z (cLR-GAN)
     sampled_z = ops.randn(_real_A.shape[0], opt.latent_dim, dtype=mstype.float32)
     _fake_B = generator(_real_A, sampled_z)
@@ -209,7 +209,7 @@ for epoch in range(opt.n_epochs):
     for i, (real_A, real_B) in enumerate(dataset.create_tuple_iterator()):
 
         # -------------------------------
-        #  Train GeneratorUNet and Encoder
+        #  Train Generator and Encoder
         # -------------------------------
 
         (loss_GE, loss_pixel, loss_kl, fake_B1, fake_B2), ge_grads = grad_ge(real_A, real_B, valid)

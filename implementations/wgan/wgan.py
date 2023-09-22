@@ -65,7 +65,7 @@ img_shape = (opt.channels, opt.img_size, opt.img_size)
 
 
 class Generator(nn.Cell):
-    """GeneratorUNet Network"""
+    """Generator Network"""
 
     def __init__(self):
         super().__init__(Generator)
@@ -120,7 +120,7 @@ D_Optim = nn.optim.RMSProp(discriminator.trainable_params(), learning_rate=opt.l
 
 
 def g_forward(_z):
-    """GeneratorUNet forward function"""
+    """Generator forward function"""
     _gen_imgs = generator(_z)
     _loss_G = -ops.mean(discriminator(_gen_imgs))
     return _loss_G, _gen_imgs

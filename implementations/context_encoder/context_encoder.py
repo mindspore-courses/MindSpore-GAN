@@ -124,7 +124,7 @@ def save_sample(_batches_done):
 
 
 def g_forward(_masked_imgs, _masked_parts, _valid):
-    """GeneratorUNet warmup forward func"""
+    """Generator warmup forward func"""
     # Generate a batch of images
     _gen_parts = generator(_masked_imgs)
 
@@ -156,7 +156,7 @@ for epoch in range(opt.n_epochs):
         fake = ops.stop_gradient(ops.zeros((imgs.shape[0], *patch)))
 
         # -----------------
-        #  Train GeneratorUNet
+        #  Train Generator
         # -----------------
         (g_loss, g_adv, g_pixel, gen_parts), g_grads = grad_g(masked_imgs, masked_parts, valid)
         optimizer_G(g_grads)

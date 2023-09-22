@@ -199,7 +199,7 @@ optimizer_D = nn.optim.Adam(coupled_discriminators.trainable_params(), learning_
 
 
 def g_forward(_batch_size, _valid):
-    """GeneratorUNet forward function"""
+    """Generator forward function"""
     # Sample noise as generator input
     z = ops.randn((_batch_size, opt.latent_dim))
 

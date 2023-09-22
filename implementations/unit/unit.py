@@ -170,7 +170,7 @@ def compute_kl(mu):
 
 
 def g_forward(_X1, _X2, _valid):
-    """GeneratorUNet forward function"""
+    """Generator forward function"""
     # Get shared latent representation
     mu1, Z1 = E1(_X1)
     mu2, Z2 = E2(_X2)

@@ -51,7 +51,7 @@ class UNetUp(nn.Cell):
 
 
 class GeneratorUNet(nn.Cell):
-    """GeneratorUNet Network"""
+    """Generator Network"""
 
     def __init__(self, input_shape):
         super().__init__(GeneratorUNet)

@@ -143,7 +143,7 @@ def sample_image(batches):
 
 
 def g_forward(_X1, _X2, _style_1, _style_2):
-    """GeneratorUNet warmup forward func"""
+    """Generator warmup forward func"""
     # Get shared latent representation
     c_code_1, s_code_1 = Enc1(_X1)
     c_code_2, s_code_2 = Enc2(_X2)

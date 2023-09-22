@@ -113,7 +113,7 @@ def sample_image(batches):
 
 
 def g_forward(_real_A, _real_B, _valid):
-    """GeneratorUNet warmup forward func"""
+    """Generator warmup forward func"""
     # GAN loss
     _fake_B = G_AB(_real_A)
     loss_GAN_AB = adversarial_loss(D_B(_fake_B), _valid)

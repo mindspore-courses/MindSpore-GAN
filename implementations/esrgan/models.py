@@ -66,7 +66,7 @@ class ResidualInResidualDenseBlock(nn.Cell):
 
 
 class GeneratorRRDB(nn.Cell):
-    """ResNet GeneratorUNet"""
+    """ResNet Generator"""
 
     def __init__(self, channels, filters=64, num_res_blocks=16, num_upsample=2):
         super().__init__(GeneratorRRDB)

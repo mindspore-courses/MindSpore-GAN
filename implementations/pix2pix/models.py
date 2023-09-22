@@ -56,7 +56,7 @@ class UNetUp(nn.Cell):
 
 
 class GeneratorUNet(nn.Cell):
-    """U-Net GeneratorUNet"""
+    """U-Net Generator"""
 
     def __init__(self, in_channels=3, out_channels=3):
         super().__init__(GeneratorUNet)

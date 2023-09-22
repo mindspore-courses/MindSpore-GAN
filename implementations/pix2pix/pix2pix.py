@@ -110,7 +110,7 @@ def sample_image(batches):
 
 
 def g_forward(_real_A, _real_B, _valid):
-    """GeneratorUNet forward function"""
+    """Generator forward function"""
     # GAN loss
     _fake_B = generator(_real_A)
     pred_fake = discriminator(_fake_B, _real_A)

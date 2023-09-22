@@ -67,7 +67,7 @@ def to_categorical(y, num_columns):
 
 
 class Generator(nn.Cell):
-    """GeneratorUNet Network"""
+    """Generator Network"""
 
     def __init__(self):
         super().__init__(Generator)
@@ -222,7 +222,7 @@ def sample_image(_n_row, batches):
 
 
 def g_forward(_imgs, _valid):
-    """GeneratorUNet forward function"""
+    """Generator forward function"""
     # Sample noise and labels as generator input
     z = ops.randn((batch_size, opt.latent_dim), dtype=mstype.float32)
     label_input = to_categorical(np.random.randint(0, opt.n_classes, batch_size), num_columns=opt.n_classes)
@@ -300,7 +300,7 @@ for epoch in range(opt.n_epochs):
         labels = to_categorical(labels.asnumpy(), num_columns=opt.n_classes)
 
         # -----------------
-        #  Train GeneratorUNet
+        #  Train Generator
         # -----------------
 
         (g_loss, gen_imgs), g_grads = grad_g(real_imgs, valid)

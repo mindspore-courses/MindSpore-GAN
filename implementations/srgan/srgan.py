@@ -85,7 +85,7 @@ dataset = CelebADataset(
 
 
 def g_forward(_imgs_hr, _imgs_lr, _valid):
-    """GeneratorUNet forward function"""
+    """Generator forward function"""
     # Generate a high resolution image from low resolution input
     _gen_hr = generator(_imgs_lr)
 

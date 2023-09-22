@@ -79,7 +79,7 @@ def save_imgs(_gen_imgs, idx):
 
 
 class Generator(nn.Cell):
-    """GeneratorUNet Network"""
+    """Generator Network"""
 
     def __init__(self):
         super().__init__(Generator)
@@ -144,7 +144,7 @@ D_Optim.update_parameters_name('D_Optim')
 
 
 def g_forward(_z):
-    """GeneratorUNet forward function"""
+    """Generator forward function"""
     fake_imgs = generator(_z)
     # Loss measures generator's ability to fool the discriminator
     # Train on fake images

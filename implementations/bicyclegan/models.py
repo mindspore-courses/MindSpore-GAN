@@ -49,7 +49,7 @@ class UNetUp(nn.Cell):
 
 
 class Generator(nn.Cell):
-    """GeneratorUNet Network"""
+    """Generator Network"""
 
     def __init__(self, latent_dim, img_shape):
         super().__init__(Generator)

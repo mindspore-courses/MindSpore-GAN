@@ -170,7 +170,7 @@ def sample_images(_batches_done):
 
 
 def g_forward(_imgs, _labels, _sampled_c):
-    """GeneratorUNet warmup forward func"""
+    """Generator warmup forward func"""
     # Translate and reconstruct image
     gen_imgs = generator(_imgs, _sampled_c)
     recov_imgs = generator(gen_imgs, _labels)
@@ -239,7 +239,7 @@ for epoch in range(opt.epoch, opt.n_epochs):
         # Every n_critic times update generator
         if i % opt.n_critic == 0:
             # -----------------
-            #  Train GeneratorUNet
+            #  Train Generator
             # -----------------
 
             (g_loss, g_loss_adv, g_loss_cls, g_loss_rec), g_grads = grad_g(imgs, labels, sampled_c)

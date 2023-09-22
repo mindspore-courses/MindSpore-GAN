@@ -79,7 +79,7 @@ def save_imgs(_gen_imgs, idx):
 
 
 class Generator(nn.Cell):
-    """GeneratorUNet Network"""
+    """Generator Network"""
 
     def __init__(self):
         super().__init__(Generator)
@@ -160,7 +160,7 @@ def compute_gradient_penalty(real_samples, fake_samples):
 
 
 def g_forward(_z):
-    """GeneratorUNet forward function"""
+    """Generator forward function"""
     _fake_imgs = generator(_z)
     # Loss measures generator's ability to fool the discriminator
     # Train on fake images

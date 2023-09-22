@@ -135,7 +135,7 @@ def sample_image(batches):
 
 
 def g_forward(_real_A, _real_B):
-    """GeneratorUNet warmup forward func"""
+    """Generator warmup forward func"""
     # Translate images to opposite domain
     _fake_A = G_BA(_real_B)
     _fake_B = G_AB(_real_A)

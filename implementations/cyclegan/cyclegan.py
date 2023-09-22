@@ -138,7 +138,7 @@ def sample_images(batches):
 
 
 def g_forward(_real_A, _real_B, _valid):
-    """GeneratorUNet forward function"""
+    """Generator forward function"""
     _fake_A = G_BA(_real_B)
     _fake_B = G_AB(_real_A)
     _rec_A = G_BA(_fake_B)

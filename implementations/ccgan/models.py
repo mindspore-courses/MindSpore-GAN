@@ -60,7 +60,7 @@ class UNetUp(nn.Cell):
 
 
 class Generator(nn.Cell):
-    """U-Net GeneratorUNet"""
+    """U-Net Generator"""
 
     def __init__(self, input_shape):
         super().__init__(Generator)
