@@ -111,9 +111,9 @@ def compute_gradient_penalty(D, real_samples, fake_samples):
     # Get random interpolation between real and fake samples
     interpolates = alpha * real_samples + ((1 - alpha) * fake_samples)
     # Get gradient w.r.t. interpolates
-    grad_fn = mindspore.grad(D, return_ids=True)
+    grad_fn = mindspore.grad(D)
     gradients = grad_fn(interpolates)
-    gradients = mindspore.get_grad(gradients, 0)
+    # gradients = mindspore.get_grad(gradients, 0)
     gradients = gradients.view(gradients.shape[0], -1)
     gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
     return gradient_penalty
