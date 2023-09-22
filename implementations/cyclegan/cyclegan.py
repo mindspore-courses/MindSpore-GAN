@@ -88,6 +88,7 @@ if opt.epoch != 0:
     mindspore.load_checkpoint(f'saved_models/%{opt.dataset_name}/D_A_{opt.epoch}.ckpt', D_A)
     mindspore.load_checkpoint(f'saved_models/%{opt.dataset_name}/D_B_{opt.epoch}.ckpt', D_B)
 
+
 # Learning rate update schedulers
 decay_lr_G_AB = DynamicDecayLR(opt.lr, opt.n_epochs, 1019, opt.epoch, opt.decay_epoch)
 decay_lr_G_BA = DynamicDecayLR(opt.lr, opt.n_epochs, 1019, opt.epoch, opt.decay_epoch)
