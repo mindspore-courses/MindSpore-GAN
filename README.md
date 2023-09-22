@@ -167,7 +167,7 @@ latent space interpolation across categories, even though the discriminator is n
 compare our results with various clustering baselines and demonstrate superior performance on both synthetic and
 real datasets.
 
-[[Paper]](https://arxiv.org/abs/1809.03627) [[Code]](implementations/cluster_gan/clustergan.py)
+[[Paper]](https://arxiv.org/abs/1809.03627) [[Code]](implementations/cluster_gan/cluster_gan.py)
 
 Code based on a full PyTorch [[implementation]](https://github.com/zhampel/clusterGAN).
 
